@@ -70,3 +70,4 @@ One row per trained unit; see llm/eval_bitrate.py for the exact definitions and 
 | phone-seed4 | 29.52 | 5.16 | 197,530 |
 | subwordphnx-bpe-5000-seed2 | 28.82 | 106.12 | 67,858 |
 | subwordphnx-bpe-5000-seed3 | 28.86 | 106.79 | 67,858 |
+| subwordphnx-bpe-5000-seed4 | 28.56 | 101.77 | 67,858 |

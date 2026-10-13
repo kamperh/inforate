@@ -249,6 +249,21 @@ python utils/bootstrap.py --units neural:word \
   neural:wordphn-bpe-200 neural:wordphn-bpe-1000 neural:wordphn-bpe-5000
 ```
 
+To list what was learned, at any of the three merge counts:
+
+```bash
+python utils/inspect_bpe.py                               # first 30 of 200 merges
+python utils/inspect_bpe.py --n-merges 5000 --top 50
+python utils/inspect_bpe.py --n-merges 1000 --all
+python utils/inspect_bpe.py --n-merges 5000 --longest 15  # deepest merge chains
+python utils/inspect_bpe.py --compare                     # the three counts together
+python utils/inspect_bpe.py --n-merges 200 --verify       # diff against the n-gram path
+```
+
+Reads the saved tokeniser only; nothing is re-learned except under `--verify`, which
+re-fits along `ngram/`'s path over 960h and takes several minutes. Glosses come from a
+dev-clean read (`--no-gloss` skips it, `--gloss-split train-clean-100` widens it).
+
 No `--tag`: word-BPE's `mincount2` suffix is historical, and there is no such
 ambiguity for this unit. `batch_size=2`/`accumulation_steps=20` and eval
 `batch_size=3`, as for word-BPE. The paired comparisons that matter are against
@@ -398,8 +413,12 @@ python utils/bootstrap.py --seeds
 Each unit's seed tuple is listed in `llm/eval_bitrate.py`'s `UNITS` comprehension, and
 has to gain the new seed before `--units <unit>-seed<n>` will resolve.
 
-Superseded dumps sit in `llm/per_utterance/superseded/`, which a default
-`utils/bootstrap.py` run does not glob, so pre- and post-fix numbers cannot mix.
+The superseded dumps that used to sit in `llm/per_utterance/superseded/` -- the
+learning-rate variants, the pre-augmentation-fix runs and their seeds -- were deleted on
+2026-10-13 as no longer worth keeping. A default `utils/bootstrap.py` run globs only the
+top level of `llm/per_utterance/`, so a stale dump put in a subdirectory is still
+ignored rather than mixed with current ones. The pre-fix figures quoted in `results.md`,
+"Seed variance", can no longer be regenerated without retraining those runs.
 
 ## Confidence intervals
 

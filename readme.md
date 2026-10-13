@@ -9,7 +9,7 @@ The following units are compared in the **main comparison**. All of the units ar
 represented as constituent phones, e.g. every word is written as the phones of which it
 is composed.
 
-- phone: 39 unit types
+- phone: 39-symbol ARPABET set
 - subwordphnx-BPE-5000: Subword BPE units are obtained at the phone level, i.e. common
   co-occurring phone sequences are merged. Merging across word boundaries is not
   allowed.
@@ -97,19 +97,29 @@ a particular script would be run.
 python ngram/ngram_phone_sweep.py
 ```
 
+**Subword-BPE (phone level).** Common co-occurring phones are merged to form new units.
+Merges across word boundaries are not allowed. Can be done at different levels.
+
+```bash
+python ngram/ngram_subwordphnx_bpe_sweep.py --vocab-size 200
+python ngram/ngram_subwordphnx_bpe_sweep.py --vocab-size 2000
+python ngram/ngram_subwordphnx_bpe_sweep.py --vocab-size 5000
+```
+
 **Syllables.** Out-of-vocabulary syllables are spelled out via their constituent phones.
 
 ```bash
 python ngram/ngram_syllable_sweep.py
 ```
 
-**Words.** Out-of-vocabulary words are spelled out via their constituent characters.
+**Words (phonetic realisations).** Out-of-vocabulary words are spelled out via their
+constituent phones.
 
 ```bash
-python ngram/ngram_word_sweep.py
+python ngram/ngram_wordphn_sweep.py
 ```
 
-**Word-BPE.** Can be done at different levels.
+**Word-BPE (phonetic realisations).** Can be done at different levels.
 
 ```bash
 python ngram/ngram_bpe_sweep.py --n-merges 200

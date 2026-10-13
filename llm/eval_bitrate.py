@@ -253,9 +253,10 @@ UNITS = {
     # canonical seed-0 run, seed 4 on 2026-10-12, so twelve units have five runs each.
     # subwordphnx-BPE at 200 and 5000 were single runs until then; 5000 was brought up
     # to five runs on 2026-10-13, leaving 200 the one unit whose SD rests on two runs.
-    # See results.md, "Seed variance". Superseded seed dumps live in
-    # llm/per_utterance/superseded/preaug-seeds/ and are excluded from the default
-    # utils/bootstrap.py sweep, which globs only the top-level directory.
+    # See results.md, "Seed variance". The pre-augmentation-fix seed dumps were kept
+    # in llm/per_utterance/superseded/preaug-seeds/ until 2026-10-13, when they were
+    # pruned; a subdirectory is the place for a superseded dump, since the default
+    # utils/bootstrap.py sweep globs only the top-level directory.
     **{
         f"{unit}-seed{seed}": {
             **BASE[unit],

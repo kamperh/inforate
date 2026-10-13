@@ -76,8 +76,10 @@ detailed experiment plan is drafted separately from this file.
   the three BPE-merge counts coming from one `--n-merges` flag, and subwordphnx-BPE's
   three vocabulary sizes from one `--vocab-size` flag, rather than separate
   scripts. `eval_bitrate.py` scores every checkpoint in its `UNITS` and also dumps
-  per-utterance bits to `per_utterance/`, for `utils/bootstrap.py`; superseded dumps
-  are parked in `per_utterance/superseded/`, which its default glob skips.
+  per-utterance bits to `per_utterance/`, for `utils/bootstrap.py`, whose default glob
+  reads only the top level of that directory, so a superseded dump can be parked in a
+  subdirectory rather than deleted. The ones kept that way -- learning-rate variants and
+  pre-augmentation-fix runs -- were pruned on 2026-10-13.
 - `qwen/`: pretrained-LM side experiment, porting the
   predecessor project's "estimator comparison"
   (`docs/assets/2026-08-30/paper_2.md` Sec 4.6)
@@ -98,6 +100,14 @@ detailed experiment plan is drafted separately from this file.
   differences under both utterance-level and speaker-level (40-cluster) resampling; the
   paired speaker-level numbers are the ones to quote, since marginal intervals are far
   wider than the differences being compared. See `design.md`, "Uncertainty".
+  `inspect_bpe.py`: lists the wordphn-BPE merges in the order learned, read from the
+  tokeniser `llm/wordphn_bpe_prepare_mmap.py` saved, nothing re-learned. Each unit is
+  glossed with the spelling its realisation most often carries on dev-clean, since
+  `AH-V DH-AH` is unreadable and "of the" is not, and a gloss marked `*` flags a
+  realisation with more than one spelling. `--compare` puts the three merge counts side
+  by side; they are nested, so 200's merges are the first 200 of 1000's and those the
+  first 1000 of 5000's. `--verify` re-learns along the n-gram path and diffs, which is
+  the check `design.md`, "Open issues", records as never having been run for this unit.
 
 ## Design principles carried over from the predecessor project
 
@@ -201,15 +211,18 @@ seed noise floor from **five seeds per unit**, the fifth run for every unit in
 `results.md`'s headline table on 2026-10-12/13; an n-gram fit is deterministic, so
 there the bootstrap interval is the whole error budget. Training variance is about 0.1
 bits/s for a difference between independently trained units, and **the floor is not
-universal**: SDs run 0.043 to 0.118 over nine of the twelve five-seed units, across
-vocabularies from 41 to 63,002 tokens, but wordphn-BPE-1000, wordphn-BPE-5000 and
-subwordphnx-BPE-2000 come in at 0.235, 0.235 and 0.279. A new unit's floor has to be
-measured rather than inherited, and subwordphnx-BPE-2000 is the project's sharpest
-demonstration of it: written up from one run against a borrowed 0.109, it measured
-0.279 and took most of its own subsection's verdicts down with it. subwordphnx-BPE at
-200 and 5000 have two runs each and come back tight (0.015 and 0.056), which is one
-degree of freedom and so the project's weakest floor, but a measured one rather than
-0.279 borrowed. Of the 21 pairwise comparisons among the original seven units, sixteen
+universal**: SDs run 0.043 to 0.118 over nine of the thirteen five-seed units, across
+vocabularies from 41 to 63,002 tokens, but subwordphnx-BPE-5000, wordphn-BPE-1000,
+wordphn-BPE-5000 and subwordphnx-BPE-2000 come in at 0.157, 0.235, 0.235 and 0.279. A
+new unit's floor has to be measured rather than inherited, and subwordphnx-BPE-2000 is
+the project's sharpest demonstration of it: written up from one run against a borrowed
+0.109, it measured 0.279 and took most of its own subsection's verdicts down with it.
+**Inferring a floor from two runs failed the same way.** subwordphnx-BPE at 200 and
+5000 read 0.015 and 0.056 over two runs each; taking 5000 to five measured 0.157,
+nearly three times its two-run spread, which cost two of the four comparisons the
+second run had bought. Vocabulary 200 is the one unit still on two runs, so its 0.015
+is a lower bound rather than an estimate. Of the 21 pairwise comparisons among the
+original seven units, sixteen
 are clear; the full set over fourteen units is 91, with the wordphn family's own in
 `results.md`, "Wordphn". Over the four paper units the defensible ranking is
 
@@ -235,11 +248,11 @@ means) and clearly worse than wordphn only on the means (3.2x, against 2.3x at s
 Chunking a word into sub-word pieces costs about 0.7 bits/s whether the pieces are
 letters or phones at seed 0, though on means the two read +0.612 and +0.915. Swept over
 vocabulary at 200/2000/5000 it descends from phone towards wordphn, 29.04 to 28.82 to
-28.52, and the ordering holds in every bootstrap resample. **With a second seed at each
-end the two ends of that sweep are now established** -- 200 to 5000 at 9.0x its floor,
-each end against phone at 9.9x and 13.8x -- while both steps through vocabulary 2000
-stay inside its 0.573 seed range, so the monotonicity is still a property of one draw
-at the middle size. It descends partly by transmitting more of where the words divide,
+28.52, and the ordering holds in every bootstrap resample. **Each end of that sweep is
+clear of phone** -- 9.9x and 6.5x its floor -- while the end-to-end step is 3.3x at
+seed 0 but 2.4x on the means, and both steps through vocabulary 2000 stay inside its
+0.573 seed range, so the monotonicity is still a property of one draw at the middle
+size. It descends partly by transmitting more of where the words divide,
 since the share of words emitted as one piece grows 47.3% to 85.8% across the sweep, so
 it is not a pure unit-size effect either, and the same confound means its gap to phone
 is not a clean modelling comparison. **The direction is also independent of the
@@ -249,8 +262,9 @@ That n-gram descent is nine times the neural one and front-loaded where the neur
 is not, so it corroborates the ordering and not the magnitudes; more seeds at 2000 are
 what would settle the inner steps. At vocabulary 5000 the n-gram unit is
 indistinguishable from wordphn (-0.005 [-0.118, +0.098]) where the neural unit stays
-0.49 bits/s above it at 5.3x the floor, so the two estimators agree on the sweep's
-direction and not on where it ends. See `results.md`, "Wordphn" and "Subwordphnx-BPE".
+0.60 bits/s above it at 3.5x the floor on means (2.1x at seed 0), so the two estimators
+agree on the sweep's direction and not on where it ends. See `results.md`, "Wordphn"
+and "Subwordphnx-BPE".
 
 **Spell-out pieces are emitted pre-marked**, and must stay that way. A bare piece
 encodes to a whole-unit id, because every letter is itself a LibriSpeech word, so
