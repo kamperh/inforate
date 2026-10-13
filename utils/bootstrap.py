@@ -1,31 +1,29 @@
 """Confidence intervals on bit rate, by bootstrapping dev-clean.
 
-Every number in this project is one point estimate, and the conclusions now turn
-on differences of well under a bit per second. This script attaches intervals to
-them, reading the per-utterance `{key: [bits, duration]}` dumps that
-`llm/eval_bitrate.py` and `ngram/per_utterance.py` write. Both stages produce the
-same shape, so one loader serves both and cross-stage comparisons work.
+Every number in this project is one point estimate, and the conclusions now turn on
+differences of well under a bit per second. This script attaches intervals to them,
+reading the per-utterance `{key: [bits, duration]}` dumps that `llm/eval_bitrate.py` and
+`ngram/per_utterance.py` write. Both stages produce the same shape, so one loader serves
+both and cross-stage comparisons work.
 
-Bit rate is a ratio of sums, `sum(bits) / sum(duration)`, so a resample means
-drawing utterances with replacement and recomputing the ratio, not averaging
-per-utterance rates (which would weight a half-second utterance the same as a
-thirty-second one).
+Bit rate is a ratio of sums, `sum(bits) / sum(duration)`, so a resample means drawing
+utterances with replacement and recomputing the ratio, not averaging per-utterance rates
+(which would weight a half-second utterance the same as a thirty-second one).
 
 **Two things this script is careful about, because getting them wrong is the easy
 mistake here.**
 
-1. **Comparisons use a paired interval, not two marginal ones.** Every unit scores
-   the identical 2,703 utterances, so per-utterance difficulty is shared and the
-   two estimates are strongly correlated. Asking whether their marginal intervals
-   overlap is badly over-conservative and can hide a real difference. Instead the
-   difference `rate_A - rate_B` is recomputed on *the same* resample, and it is
-   that distribution which is reported.
-2. **The headline interval resamples speakers, not utterances.** Utterances from
-   one speaker are not independent, so an i.i.d.-over-utterances bootstrap
-   understates the uncertainty. dev-clean has 40 speakers and no speaker exceeds
-   2.8% of total duration, so a cluster bootstrap over speakers is stable. Both are
-   reported; the speaker-level one is the honest number and the utterance-level one
-   is the optimistic bound.
+1. **Comparisons use a paired interval, not two marginal ones.** Every unit scores the
+   identical 2,703 utterances, so per-utterance difficulty is shared and the two
+   estimates are strongly correlated. Asking whether their marginal intervals overlap is
+   badly over-conservative and can hide a real difference. Instead the difference
+   `rate_A - rate_B` is recomputed on *the same* resample, and it is that distribution
+   which is reported.
+2. **The headline interval resamples speakers, not utterances.** Utterances from one
+   speaker are not independent, so an i.i.d.-over-utterances bootstrap understates the
+   uncertainty. dev-clean has 40 speakers and no speaker exceeds 2.8% of total duration,
+   so a cluster bootstrap over speakers is stable. Both are reported; the speaker-level
+   one is the honest number and the utterance-level one is the optimistic bound.
 
 What this does **not** measure is training variance: each checkpoint is treated as
 fixed, so it cannot say whether a retrain at another seed would land elsewhere. For
@@ -42,8 +40,10 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent  # utils/ -> project root
-SOURCES = {"neural": ROOT / "llm" / "per_utterance",
-           "ngram": ROOT / "ngram" / "per_utterance"}
+SOURCES = {
+    "neural": ROOT / "llm" / "per_utterance",
+    "ngram": ROOT / "ngram" / "per_utterance",
+}
 B = 10000
 SEED = 0
 ALPHA = 5.0  # percent, for a 95% percentile interval
@@ -51,7 +51,9 @@ ALPHA = 5.0  # percent, for a 95% percentile interval
 
 def load(path):
     """{key: (bits, duration)} from one dump."""
-    return {k: (float(b), float(d)) for k, (b, d) in json.loads(path.read_text()).items()}
+    return {
+        k: (float(b), float(d)) for k, (b, d) in json.loads(path.read_text()).items()
+    }
 
 
 def discover():
@@ -144,8 +146,10 @@ def report(datasets, comparisons, by_speaker):
         d = rates[:, names.index(a)] - rates[:, names.index(b_)]
         lo, hi = ci(d)
         sig = "yes" if (lo > 0 or hi < 0) else "no"
-        print(f"  {a + ' - ' + b_:<44} {point[a] - point[b_]:>7.2f}  "
-              f"[{lo:>7.2f}, {hi:>7.2f}]  {sig}")
+        print(
+            f"  {a + ' - ' + b_:<44} {point[a] - point[b_]:>7.2f}  "
+            f"[{lo:>7.2f}, {hi:>7.2f}]  {sig}"
+        )
 
 
 def seed_summary(found):
@@ -158,6 +162,7 @@ def seed_summary(found):
     three degrees of freedom, so treat it as an order of magnitude rather than a
     precise figure.
     """
+
     def rate(d):
         return sum(b for b, _ in d.values()) / sum(x for _, x in d.values())
 
@@ -185,31 +190,46 @@ def seed_summary(found):
         sd = (sum((v - mean) ** 2 for v in vals) / (len(vals) - 1)) ** 0.5
         sds[u] = sd
         shown = " ".join(f"{v:.2f}" for v in vals)
-        print(f"  {u:<18} {shown:>28}  {mean:>7.3f} {sd:>6.3f} "
-              f"{max(vals) - min(vals):>7.3f}")
+        print(
+            f"  {u:<18} {shown:>28}  {mean:>7.3f} {sd:>6.3f} "
+            f"{max(vals) - min(vals):>7.3f}"
+        )
 
-    print(f"\n  gaps against the noise floor (sd of a difference = "
-          f"sqrt(sa^2+sb^2)):\n")
+    print(
+        f"\n  gaps against the noise floor (sd of a difference = "
+        f"sqrt(sa^2+sb^2)):\n"
+    )
     print(f"  {'comparison':<38} {'gap':>7} {'sd_diff':>8}  {'gap/sd':>7}  verdict")
     names = sorted(sds)
     for i, a in enumerate(names):
-        for b in names[i + 1:]:
+        for b in names[i + 1 :]:
             ra = sum(units[a].values()) / len(units[a])
             rb = sum(units[b].values()) / len(units[b])
             sd = (sds[a] ** 2 + sds[b] ** 2) ** 0.5
             gap = abs(ra - rb)
             ratio = gap / sd if sd else float("inf")
-            verdict = "clear" if ratio >= 3 else ("marginal" if ratio >= 2 else "WITHIN NOISE")
-            print(f"  {a + ' vs ' + b:<38} {gap:>7.3f} {sd:>8.3f}  {ratio:>7.1f}  {verdict}")
+            verdict = (
+                "clear"
+                if ratio >= 3
+                else ("marginal" if ratio >= 2 else "WITHIN NOISE")
+            )
+            print(
+                f"  {a + ' vs ' + b:<38} {gap:>7.3f} {sd:>8.3f}  {ratio:>7.1f}  {verdict}"
+            )
     return sds
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--units", nargs="+", help="Restrict to these labels (stage:name).")
-    ap.add_argument("--list", action="store_true", help="List available dumps and exit.")
-    ap.add_argument("--seeds", action="store_true",
-                    help="Report across-seed spread and the implied noise floor.")
+    ap.add_argument(
+        "--list", action="store_true", help="List available dumps and exit."
+    )
+    ap.add_argument(
+        "--seeds",
+        action="store_true",
+        help="Report across-seed spread and the implied noise floor.",
+    )
     args = ap.parse_args()
 
     found = discover()
@@ -217,7 +237,9 @@ def main():
         for k, v in found.items():
             print(f"  {k}  ({len(v):,} utterances)")
         if not found:
-            print("  no dumps found; run llm/eval_bitrate.py and ngram/per_utterance.py")
+            print(
+                "  no dumps found; run llm/eval_bitrate.py and ngram/per_utterance.py"
+            )
         return
     if args.units:
         missing = [u for u in args.units if u not in found]

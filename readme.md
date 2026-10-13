@@ -230,8 +230,24 @@ the script. The script writes `llm/eval_bitrate.md`.
 python llm/eval_bitrate.py
 ```
 
-I also 
+I also trained things for multiple seeds. This can be done e.g. as follows:
 
+```bash
+s = 1
+python llm/word_bpe_train.py --n-merges 5000 --seed $s --tag seed$s
+python llm/eval_bitrate.py
+python utils/bootstrap.py --seeds
+```
+
+
+## Qwen models
+
+Bitrates for two large models are considered:
+
+```bash
+python qwen/eval_bitrate.py --model Qwen/Qwen2.5-1.5B
+python qwen/eval_bitrate.py --model Qwen/Qwen2.5-3B
+```
 
 
 ## AI disclosure
