@@ -16,10 +16,10 @@ is composed.
 - phone: 39-symbol ARPABET set
 - subwordphnx-BPE-5000: Subword BPE units are obtained at the phone level, i.e. common
   co-occurring phone sequences are merged. Merging across word boundaries is not
-  allowed. The `-5000` indicates that there are 5000 merges.
+  allowed. The `-5000` indicates the final vocabulary size after merging.
 - syllable: Represented as phones, e.g. "sorry" is represented as "S-AA R-IY".
-- wordphn: The word "sorry" is represented as "S-AA-R-IY". Each word type is therefore
-  determined by its phonetic realisation. This means that "to", "too" and "two" are all
+- wordphn: The word "sorry" is represented as "S-AA-R-IY". Each word is therefore
+  determined by its phonetic realisation. This means that too" and "two" are both
   represented as "T-UW".
 - wordphn-BPE-200: As above for wordphn, but common multi-word combinations are now
   merged.
@@ -34,7 +34,7 @@ There are also several **sanity checks** using different units:
 - word-BPE-5000: Multi-word combinations are now merged according to word orthography.
 
 Finally, two Qwen models, Qwen2.5-1.5B and Qwen2.5-3B, are also applied to the data
-using its own unicode BPE tokenisation.
+using its own byte-pair BPE tokenisation over unicode bytes.
 
 
 
@@ -44,7 +44,7 @@ Set up the base environment:
 
 ```bash
 conda create -n inforate python=3.14 -y
-conda run -n inforate pip install tgt tqdm numpy matplotlib
+conda run -n inforate pip install tgt tqdm numpy
 conda activate inforate
 ```
 
@@ -126,9 +126,9 @@ python ngram/ngram_wordphn_sweep.py
 **Word-BPE (phonetic realisations).** Can be done at different levels.
 
 ```bash
-python ngram/ngram_bpe_sweep.py --n-merges 200
-python ngram/ngram_bpe_sweep.py --n-merges 1000
-python ngram/ngram_bpe_sweep.py --n-merges 5000
+python ngram/ngram_wordphn_bpe_sweep.py --n-merges 200
+python ngram/ngram_wordphn_bpe_sweep.py --n-merges 1000
+python ngram/ngram_wordphn_bpe_sweep.py --n-merges 5000
 ```
 
 To inspect and view merges, the following can be used:
@@ -223,7 +223,7 @@ done
 
 ## Evaluation
 
-Every unit is scored agains an existing checkpoint, specified in `UNITS` at the top of
+Every unit is scored against an existing checkpoint, specified in `UNITS` at the top of
 the script. The script writes `llm/eval_bitrate.md`.
 
 ```bash
@@ -233,7 +233,7 @@ python llm/eval_bitrate.py
 I also trained things for multiple seeds. This can be done e.g. as follows:
 
 ```bash
-s = 1
+s=1
 python llm/word_bpe_train.py --n-merges 5000 --seed $s --tag seed$s
 python llm/eval_bitrate.py
 python utils/bootstrap.py --seeds
