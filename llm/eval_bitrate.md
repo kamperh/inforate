@@ -71,3 +71,6 @@ One row per trained unit; see llm/eval_bitrate.py for the exact definitions and 
 | subwordphnx-bpe-5000-seed2 | 28.82 | 106.12 | 67,858 |
 | subwordphnx-bpe-5000-seed3 | 28.86 | 106.79 | 67,858 |
 | subwordphnx-bpe-5000-seed4 | 28.56 | 101.77 | 67,858 |
+| subwordphnx-bpe-200-seed2 | 29.07 | 14.23 | 120,266 |
+| subwordphnx-bpe-200-seed3 | 29.08 | 14.24 | 120,266 |
+| subwordphnx-bpe-200-seed4 | 29.06 | 14.21 | 120,266 |

@@ -306,9 +306,8 @@ against the full dev-clean set; writes `llm/eval_bitrate.md`.
 
 ## Seed variance
 
-Up to four extra seeds per unit, in five batches, oldest first below. Thirteen of the
-fourteen units have five runs each; `subwordphnx-bpe-200` has two. `--seed` is a
-permanent flag on every `<unit>_train.py`
+Four extra seeds per unit, in six batches, oldest first below, so all fourteen units
+have five runs each. `--seed` is a permanent flag on every `<unit>_train.py`
 (default 0, the canonical value), defined once in `llm/train_args.py` alongside `--tag`,
 `--lr-max`, `--epochs` and `--overwrite`; it seeds torch, numpy and python, so it varies
 initialisation and the random training-window sampling, but not the augmentation draw
@@ -399,13 +398,25 @@ python utils/bootstrap.py --seeds
 seed column in `results.md`'s headline table is the SD these give.
 
 `subwordphnx-bpe-5000` was taken from two runs to five on 2026-10-13, three runs, about
-an hour and a half, so that the only unit left reading off two runs is
-`subwordphnx-bpe-200`:
+an hour and a half:
 
 ```bash
 for s in 2 3 4; do
   python llm/subwordphnx_bpe_train.py --vocab-size 5000 --seed $s --tag seed$s
   python llm/eval_bitrate.py --units subwordphnx-bpe-5000-seed$s
+done
+python utils/bootstrap.py --seeds
+```
+
+`subwordphnx-bpe-200` followed the same day, three runs, about two hours and twenty-five
+minutes -- slower per run than the 5,000 size because a 200-piece vocabulary leaves the
+longest token stream and so the largest step budget at the fixed 20 epochs. With these
+every unit in `results.md`'s headline table has five runs:
+
+```bash
+for s in 2 3 4; do
+  python llm/subwordphnx_bpe_train.py --vocab-size 200 --seed $s --tag seed$s
+  python llm/eval_bitrate.py --units subwordphnx-bpe-200-seed$s
 done
 python utils/bootstrap.py --seeds
 ```

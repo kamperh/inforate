@@ -207,21 +207,23 @@ Numbers live in `results.md` and `llm/eval_bitrate.md`.
 `qwen/` is complete: Qwen2.5-1.5B and 3B scored on dev-clean.
 
 Bit rates carry 95% confidence intervals (`utils/bootstrap.py`) and, for `llm/`, a
-seed noise floor from **five seeds per unit**, the fifth run for every unit in
-`results.md`'s headline table on 2026-10-12/13; an n-gram fit is deterministic, so
+seed noise floor from **five seeds for every one of the fourteen units**, the last of
+them on 2026-10-13; an n-gram fit is deterministic, so
 there the bootstrap interval is the whole error budget. Training variance is about 0.1
 bits/s for a difference between independently trained units, and **the floor is not
-universal**: SDs run 0.043 to 0.118 over nine of the thirteen five-seed units, across
+universal**: SDs run 0.015 to 0.118 over ten of the fourteen units, across
 vocabularies from 41 to 63,002 tokens, but subwordphnx-BPE-5000, wordphn-BPE-1000,
 wordphn-BPE-5000 and subwordphnx-BPE-2000 come in at 0.157, 0.235, 0.235 and 0.279. A
 new unit's floor has to be measured rather than inherited, and subwordphnx-BPE-2000 is
 the project's sharpest demonstration of it: written up from one run against a borrowed
 0.109, it measured 0.279 and took most of its own subsection's verdicts down with it.
-**Inferring a floor from two runs failed the same way.** subwordphnx-BPE at 200 and
-5000 read 0.015 and 0.056 over two runs each; taking 5000 to five measured 0.157,
-nearly three times its two-run spread, which cost two of the four comparisons the
-second run had bought. Vocabulary 200 is the one unit still on two runs, so its 0.015
-is a lower bound rather than an estimate. Of the 21 pairwise comparisons among the
+**Inferring a floor from two runs is no safer.** subwordphnx-BPE at 200 and
+5000 read 0.015 and 0.056 over two runs each; taking both to five confirmed 200 at
+0.015, the quietest unit in the project, and measured 5000 at 0.157, nearly three times
+its two-run spread, which cost two of the four comparisons the second run had bought --
+with nothing in the two-run numbers to mark the one that would hold. Three sizes of this
+one tokenisation hold the project's quietest floor and its noisiest.
+Of the 21 pairwise comparisons among the
 original seven units, sixteen
 are clear; the full set over fourteen units is 91, with the wordphn family's own in
 `results.md`, "Wordphn". Over the four paper units the defensible ranking is
@@ -249,8 +251,8 @@ Chunking a word into sub-word pieces costs about 0.7 bits/s whether the pieces a
 letters or phones at seed 0, though on means the two read +0.612 and +0.915. Swept over
 vocabulary at 200/2000/5000 it descends from phone towards wordphn, 29.04 to 28.82 to
 28.52, and the ordering holds in every bootstrap resample. **Each end of that sweep is
-clear of phone** -- 9.9x and 6.5x its floor -- while the end-to-end step is 3.3x at
-seed 0 but 2.4x on the means, and both steps through vocabulary 2000 stay inside its
+clear of phone** -- 9.8x and 6.5x its floor -- while the end-to-end step is 3.3x at
+seed 0 but 2.5x on the means, and both steps through vocabulary 2000 stay inside its
 0.573 seed range, so the monotonicity is still a property of one draw at the middle
 size. It descends partly by transmitting more of where the words divide,
 since the share of words emitted as one piece grows 47.3% to 85.8% across the sweep, so

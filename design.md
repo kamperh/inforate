@@ -149,32 +149,35 @@ no SGD, so re-running at a different seed changes nothing. For `llm/` there is a
 second source, measured on 2026-09-07/08 with three extra seeds per unit, on
 2026-10-08/09 for the four wordphn units, on 2026-10-09 for `subwordphnx-BPE-2000`,
 and on 2026-10-12/13 with one further seed for every unit in `results.md`'s headline
-table:
+table and three more at each end of the subwordphnx sweep:
 
 - Per-unit SD across **five seeds** is **0.043 to 0.118 bits/s** for the seven original
   units, so the noise floor for a *difference* between two independently trained
   ones, `sqrt(sa^2 + sb^2)`, is roughly **0.1 bits/s**. That is the figure a neural
   gap between them must clear.
-- **The floor is not universal.** Four of the thirteen five-seed units are worse by a
+- **The floor is not universal.** Four of the fourteen units are worse by a
   factor of two to six: `subwordphnx-BPE-5000` at **0.157**, `wordphn-BPE-1000` and
   `wordphn-BPE-5000` at **0.235** each and `subwordphnx-BPE-2000` at **0.279**, the
   worst in the project. A difference involving one of them must clear about **0.16 to
   0.28 bits/s** and a difference between two of them **0.22 to 0.39**. Every other
-  unit, wordphn and wordphn-BPE-200 included, sits in the original 0.04 to 0.12 band.
-- **Within that band the floor is roughly architecture-independent**: under 3x
-  across vocabularies from 41 to 63,002 tokens and two batch configurations. The
-  four outliers show that it cannot simply be assumed for a new unit, which is why
-  the four wordphn units were seeded rather than read against an assumed 0.07; see
-  `results.md`, "With collocation merging", for what that changed.
-- **`subwordphnx-BPE-200` has two runs**, not five, and reads **0.015**: tight, but on
-  one degree of freedom, so treat it as a lower bound on that unit's floor. Both
-  endpoints of the vocabulary sweep were in this position after 2026-10-12, reading
-  0.015 and 0.056 where they had previously borrowed **0.289** from
-  `subwordphnx-BPE-2000`. Taking the 5,000 end to five runs on 2026-10-13 measured it
-  at **0.157**, nearly three times its own two-run spread, which cost two of the four
-  comparisons the second run had bought: borrowing a floor and inferring one from two
-  runs have now both been shown wrong in the same subsection. Five seeds at vocabulary
-  200, and more than five at 2,000, are what the rest of that sweep needs.
+  unit, wordphn and wordphn-BPE-200 included, sits at 0.12 or below, and
+  `subwordphnx-BPE-200` at **0.015** is the quietest in the project by a factor of
+  nearly three.
+- **Within that band the floor is roughly architecture-independent**: 0.015 to 0.118
+  across vocabularies from 41 to 63,002 tokens and two batch configurations, with the
+  low extreme only making differences cheaper to establish, so 0.1 stays a conservative
+  floor for a difference between two of them. The four outliers show that it cannot
+  simply be assumed for a new unit, which is why the four wordphn units were seeded
+  rather than read against an assumed 0.07; see `results.md`, "With collocation
+  merging", for what that changed.
+- **Inferring a floor from two runs is no safer than borrowing one.** Both ends of the
+  subwordphnx vocabulary sweep stood on two runs after 2026-10-12, reading 0.015 and
+  0.056 where they had previously borrowed **0.289** from `subwordphnx-BPE-2000`.
+  Taking both to five runs on 2026-10-13 confirmed one and broke the other: vocabulary
+  200 measured **0.015** again, while 5,000 measured **0.157**, nearly three times its
+  own two-run spread, which cost two of the four comparisons its second run had bought.
+  Nothing in the two-run numbers marked the one that would hold. More than five seeds
+  at vocabulary 2,000 are what the rest of that sweep needs.
 - The seed varies initialisation and the random training-window sampling. It does
   **not** vary the augmentation draw, fixed when the mmap is built at
   `AUGMENT_SEED = 0`, nor the learned BPE merges, so this is retrain-on-fixed-data
@@ -699,8 +702,8 @@ alongside vocabulary. That is the standing protocol, and word-BPE's own merge co
 vary in the same way. A second consequence, found once the middle size was seeded: the
 whole sweep spans 0.52 bits/s while its middle point has a seed SD of 0.279, so no step
 that passes through vocabulary 2000 can be separated from training noise. Seeding the
-two ends (2026-10-12/13) separates each of them from phone, at 9.9x and 6.5x their
-floors; the end-to-end step is 3.3x at seed 0 and 2.4x on the means, so it sits on the
+two ends (2026-10-12/13) separates each of them from phone, at 9.8x and 6.5x their
+floors; the end-to-end step is 3.3x at seed 0 and 2.5x on the means, so it sits on the
 bar rather than above it. See "Uncertainty". The n-gram sweeps at the same three
 vocabularies, run 2026-10-12, recover the same ordering with every step clear of zero
 and no seed floor to clear, so the direction is established even though the neural
@@ -983,9 +986,11 @@ write-up the numbers would be regenerated on test-clean with dev-clean kept for
 selection; the units' ordering is not expected to move, but nothing here establishes
 that.
 
-**One of the three subwordphnx units, vocabulary 200, has two seeds rather than five**,
-so its noise floor rests on one degree of freedom, and the middle size's own floor
-leaves every step through it unsettled. See "Uncertainty".
+**The middle of the subwordphnx vocabulary sweep is unsettled.** All three sizes now
+have five seeds, but vocabulary 2,000's own floor of 0.279 is wider than the whole
+descent, so every step through it stays unseparated from training noise, and its spread
+looks bimodal rather than Gaussian, so more than another three runs would be needed.
+See "Uncertainty".
 
 **A tokeniser agreement that is not enforced.** `ngram/` and `llm/` learn word-BPE
 merges from the same sentences with the same class, but feed them in different

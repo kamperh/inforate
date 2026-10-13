@@ -251,8 +251,8 @@ UNITS = {
     # Seed-variance runs, giving the noise floor that a difference between two
     # independently trained units must clear. Seeds 1-3 were run alongside each unit's
     # canonical seed-0 run, seed 4 on 2026-10-12, so twelve units have five runs each.
-    # subwordphnx-BPE at 200 and 5000 were single runs until then; 5000 was brought up
-    # to five runs on 2026-10-13, leaving 200 the one unit whose SD rests on two runs.
+    # subwordphnx-BPE at 200 and 5000 were single runs until then and were taken to
+    # five runs on 2026-10-13, so every unit here now has five.
     # See results.md, "Seed variance". The pre-augmentation-fix seed dumps were kept
     # in llm/per_utterance/superseded/preaug-seeds/ until 2026-10-13, when they were
     # pruned; a subdirectory is the place for a superseded dump, since the default
@@ -277,7 +277,7 @@ UNITS = {
             ("wordphn-bpe-1000", "wordphn-bpe1000", (1, 2, 3, 4)),
             ("wordphn-bpe-5000", "wordphn-bpe5000", (1, 2, 3, 4)),
             ("subwordphnx-bpe-2000", "subwordphnx-bpe2000", (1, 2, 3, 4)),
-            ("subwordphnx-bpe-200", "subwordphnx-bpe200", (1,)),
+            ("subwordphnx-bpe-200", "subwordphnx-bpe200", (1, 2, 3, 4)),
             ("subwordphnx-bpe-5000", "subwordphnx-bpe5000", (1, 2, 3, 4)),
         )
         for seed in seeds
