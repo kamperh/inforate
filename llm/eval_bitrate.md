@@ -1,0 +1,72 @@
+# Neural LM bit rate on dev-clean
+
+One row per trained unit; see llm/eval_bitrate.py for the exact definitions and the known mismatch with ngram/'s own numbers.
+
+| unit | bit rate (bits/s) | perplexity | dev-clean tokens |
+|---|---:|---:|---:|
+| phone | 29.60 | 5.19 | 197,530 |
+| subword-bpe | 28.20 | 49.82 | 79,234 |
+| word | 27.46 | 147.27 | 60,412 |
+| syllable | 28.41 | 52.74 | 78,696 |
+| word-bpe-200 | 27.76 | 258.78 | 54,883 |
+| word-bpe-1000 | 28.06 | 399.95 | 51,447 |
+| word-bpe-5000 | 28.56 | 741.28 | 47,461 |
+| phone-seed1 | 29.61 | 5.19 | 197,530 |
+| subword-bpe-seed1 | 27.96 | 48.23 | 79,234 |
+| word-seed1 | 27.50 | 148.49 | 60,412 |
+| syllable-seed1 | 28.33 | 52.12 | 78,696 |
+| word-bpe-200-seed1 | 27.94 | 268.03 | 54,883 |
+| word-bpe-1000-seed1 | 28.12 | 404.62 | 51,447 |
+| word-bpe-5000-seed1 | 28.54 | 737.93 | 47,461 |
+| phone-seed2 | 29.59 | 5.18 | 197,530 |
+| subword-bpe-seed2 | 27.99 | 48.41 | 79,234 |
+| word-seed2 | 27.55 | 149.73 | 60,412 |
+| syllable-seed2 | 28.40 | 52.68 | 78,696 |
+| word-bpe-200-seed2 | 27.83 | 262.22 | 54,883 |
+| word-bpe-1000-seed2 | 28.06 | 399.72 | 51,447 |
+| word-bpe-5000-seed2 | 28.56 | 741.83 | 47,461 |
+| phone-seed3 | 29.49 | 5.15 | 197,530 |
+| subword-bpe-seed3 | 28.11 | 49.25 | 79,234 |
+| word-seed3 | 27.45 | 147.09 | 60,412 |
+| syllable-seed3 | 28.38 | 52.50 | 78,696 |
+| word-bpe-200-seed3 | 27.87 | 264.39 | 54,883 |
+| word-bpe-1000-seed3 | 28.22 | 413.24 | 51,447 |
+| word-bpe-5000-seed3 | 28.39 | 713.71 | 47,461 |
+| wordphn | 28.16 | 177.84 | 59,695 |
+| wordphn-bpe-200 | 28.35 | 297.85 | 54,661 |
+| wordphn-bpe-1000 | 28.48 | 448.66 | 51,236 |
+| wordphn-bpe-5000 | 29.58 | 952.70 | 47,364 |
+| wordphn-seed1 | 28.07 | 174.92 | 59,695 |
+| wordphn-seed2 | 28.07 | 174.90 | 59,695 |
+| wordphn-seed3 | 27.95 | 171.29 | 59,695 |
+| wordphn-bpe-200-seed1 | 28.21 | 289.61 | 54,661 |
+| wordphn-bpe-200-seed2 | 28.11 | 283.89 | 54,661 |
+| wordphn-bpe-200-seed3 | 28.27 | 292.84 | 54,661 |
+| wordphn-bpe-1000-seed1 | 28.82 | 482.46 | 51,236 |
+| wordphn-bpe-1000-seed2 | 28.99 | 500.16 | 51,236 |
+| wordphn-bpe-1000-seed3 | 29.01 | 502.08 | 51,236 |
+| wordphn-bpe-5000-seed1 | 29.40 | 913.31 | 47,364 |
+| wordphn-bpe-5000-seed2 | 29.01 | 834.92 | 47,364 |
+| wordphn-bpe-5000-seed3 | 29.31 | 895.23 | 47,364 |
+| subwordphnx-bpe-200 | 29.04 | 14.19 | 120,266 |
+| subwordphnx-bpe-2000 | 28.82 | 59.87 | 77,344 |
+| subwordphnx-bpe-5000 | 28.52 | 101.07 | 67,858 |
+| subwordphnx-bpe-2000-seed1 | 28.76 | 59.43 | 77,344 |
+| subwordphnx-bpe-2000-seed2 | 29.24 | 63.55 | 77,344 |
+| subwordphnx-bpe-2000-seed3 | 29.33 | 64.41 | 77,344 |
+| subwordphnx-bpe-200-seed1 | 29.06 | 14.21 | 120,266 |
+| subwordphnx-bpe-5000-seed1 | 28.60 | 102.38 | 67,858 |
+| subwordphnx-bpe-2000-seed4 | 28.76 | 59.38 | 77,344 |
+| subword-bpe-seed4 | 28.22 | 50.01 | 79,234 |
+| syllable-seed4 | 28.53 | 53.61 | 78,696 |
+| word-bpe-5000-seed4 | 28.57 | 744.10 | 47,461 |
+| word-bpe-1000-seed4 | 28.11 | 404.17 | 51,447 |
+| word-bpe-200-seed4 | 27.84 | 262.77 | 54,883 |
+| wordphn-bpe-5000-seed4 | 29.07 | 846.46 | 47,364 |
+| wordphn-bpe-1000-seed4 | 28.59 | 459.34 | 51,236 |
+| wordphn-bpe-200-seed4 | 28.40 | 301.07 | 54,661 |
+| wordphn-seed4 | 28.08 | 175.41 | 59,695 |
+| word-seed4 | 27.45 | 147.08 | 60,412 |
+| phone-seed4 | 29.52 | 5.16 | 197,530 |
+| subwordphnx-bpe-5000-seed2 | 28.82 | 106.12 | 67,858 |
+| subwordphnx-bpe-5000-seed3 | 28.86 | 106.79 | 67,858 |
