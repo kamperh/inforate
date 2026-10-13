@@ -75,7 +75,10 @@ detailed experiment plan is drafted separately from this file.
   `subwordphnx_bpe`, `syllable`, `word`, `word_bpe`, `wordphn` and `wordphn_bpe`, with
   the three BPE-merge counts coming from one `--n-merges` flag, and subwordphnx-BPE's
   three vocabulary sizes from one `--vocab-size` flag, rather than separate
-  scripts. `eval_bitrate.py` scores every checkpoint in its `UNITS` and also dumps
+  scripts. `word_sample.py` and `subword_bpe_sample.py` continue a word prompt from a
+  trained checkpoint, as a diagnostic that nothing is scored from: word's prints tokens
+  rather than decoded text, so a `~`-marked spell-out stays visible.
+  `eval_bitrate.py` scores every checkpoint in its `UNITS` and also dumps
   per-utterance bits to `per_utterance/`, for `utils/bootstrap.py`, whose default glob
   reads only the top level of that directory, so a superseded dump can be parked in a
   subdirectory rather than deleted. The ones kept that way -- learning-rate variants and

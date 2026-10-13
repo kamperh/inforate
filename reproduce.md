@@ -175,6 +175,7 @@ project's four comparison units.
 ```bash
 python llm/subword_bpe_prepare_mmap.py
 python llm/subword_bpe_train.py
+python llm/subword_bpe_sample.py   # Optional: sample continuations from a checkpoint
 ```
 
 ### Subwordphnx BPE
@@ -210,6 +211,7 @@ called directly. See `results.md`, "Subwordphnx-BPE".
 ```bash
 python llm/word_prepare_mmap.py
 python llm/word_train.py
+python llm/word_sample.py   # Optional: sample continuations from a checkpoint
 ```
 
 `batch_size=2`/`accumulation_steps=20`, not the default `10`/`4`: word's 58,006-token

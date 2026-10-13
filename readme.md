@@ -5,6 +5,10 @@
 
 ## Overview
 
+This is the repository for the paper:
+
+- H. Kamper, "To fill in," 2026. [[arXiv](https://www.tocomplete.com)]
+
 The following units are compared in the **main comparison**. All of the units are
 represented as constituent phones, e.g. every word is written as the phones of which it
 is composed.
@@ -12,7 +16,7 @@ is composed.
 - phone: 39-symbol ARPABET set
 - subwordphnx-BPE-5000: Subword BPE units are obtained at the phone level, i.e. common
   co-occurring phone sequences are merged. Merging across word boundaries is not
-  allowed.
+  allowed. The `-5000` indicates that there are 5000 merges.
 - syllable: Represented as phones, e.g. "sorry" is represented as "S-AA R-IY".
 - wordphn: The word "sorry" is represented as "S-AA-R-IY". Each word type is therefore
   determined by its phonetic realisation. This means that "to", "too" and "two" are all
@@ -85,7 +89,7 @@ A subset of the statistics:
 
 
 
-## $n$-gram language models
+## N-gram language models
 
 N-gram models of order 1 to 5 are trained on 25%, 50%, 75%, 100% of LibriSpeech 960h.
 Bitrates and perplexities are evaluated on dev-clean. For each of the different units,
@@ -140,13 +144,22 @@ python utils/inspect_bpe.py --n-merges 5000 --longest 15  # deepest merge chains
 
 ## Neural language models
 
-For each neural model, data is first prepared and then the model is trained.
+For each neural model, data is first prepared and then the model is trained. Directly
+below are the models that form the main comparison.
 
 **Phones**
 
 ```bash
 python llm/phone_prepare_mmap.py
 python llm/phone_train.py
+```
+
+**Subword-BPE (phone level)**
+
+```bash
+python llm/subwordphnx_bpe_prepare_mmap.py --vocab-size 5000
+python llm/subwordphnx_bpe_train.py --vocab-size 5000
+python llm/eval_bitrate.py --units subwordphnx-bpe-5000
 ```
 
 **Syllables**
@@ -156,9 +169,32 @@ python llm/syllable_prepare_mmap.py
 python llm/syllable_train.py
 ```
 
+**Words (phonetic realisations)**
+
+```bash
+python llm/wordphn_prepare_mmap.py
+python llm/wordphn_train.py
+python llm/eval_bitrate.py --units wordphn
+python utils/bootstrap.py --units neural:wordphn neural:word  # per-utterance samples
+```
+
+**Word-BPE (phonetic realisations).** Includes a loop over the different levels.
+
+```bash
+for n in 200 1000 5000; do
+    python llm/wordphn_bpe_prepare_mmap.py --n-merges $n
+    python llm/wordphn_bpe_train.py --n-merges $n
+done
+python llm/eval_bitrate.py --units wordphn-bpe-200 wordphn-bpe-1000 wordphn-bpe-5000
+python utils/bootstrap.py --units neural:word \
+    neural:wordphn-bpe-200 neural:wordphn-bpe-1000 neural:wordphn-bpe-5000
+```
+
+The models below are sanity checks.
+
 **Subword BPE.** This is not something I am really interested in, but I included it as a
-sanity check. Here BPE is performed within words, as is done normally. You can also
-sample from this model.
+sanity check. Here BPE is performed within words on characters, as is done normally. You
+can also sample from this model.
 
 ```bash
 python llm/subword_bpe_prepare_mmap.py
@@ -178,8 +214,8 @@ python llm/word_sample.py   # optional: sample continuations from a checkpoint
 
 ```bash
 for n in 200 1000 5000; do
-  python llm/word_bpe_prepare_mmap.py --n-merges $n
-  python llm/word_bpe_train.py --n-merges $n
+    python llm/word_bpe_prepare_mmap.py --n-merges $n
+    python llm/word_bpe_train.py --n-merges $n
 done
 ```
 
@@ -194,12 +230,15 @@ the script. The script writes `llm/eval_bitrate.md`.
 python llm/eval_bitrate.py
 ```
 
+I also 
+
 
 
 ## AI disclosure
 
-The code for this project was written using AI (Claude). I conceived of all the
+The code for this project was written using AI (Claude Opus). I conceived of all the
 experiments and carefully laid out a plan; AI then implemented it. I reviewed the code,
 found and fixed bugs, and edited it to improve clarity. The documentation produced and
 maintained by AI is included with this repository (`design.md`, `results.md`,
-`reproduce.md`, `CLAUDE.md`).
+`reproduce.md`, `CLAUDE.md`). I wrote this `readme.md` as well as the paper that
+accompany this work.
