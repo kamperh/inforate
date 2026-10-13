@@ -22,7 +22,7 @@ is composed.
 - wordphn-BPE-1000
 - wordphn-BPE-5000
 
-There is also several **sanity checks** using different units:
+There are also several **sanity checks** using different units:
 
 - subword-BPE: Merging occurs at the character level rather than the phone level as
   above for subwordphnx-BPE.
@@ -85,7 +85,7 @@ A subset of the statistics:
 
 
 
-## N-gram language models
+## $n$-gram language models
 
 N-gram models of order 1 to 5 are trained on 25%, 50%, 75%, 100% of LibriSpeech 960h.
 Bitrates and perplexities are evaluated on dev-clean. For each of the different units,
