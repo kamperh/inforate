@@ -43,8 +43,9 @@ if __name__ == "__main__":
         default=[2000],
         help="Tokeniser vocabulary sizes to build, including the three specials and the "
         "39 single phones, so the merge count is this minus 42. 2000 matches "
-        "subword-bpe exactly and is the default; 200 and 5000 trace how the unit sits "
-        "between phone and wordphn (results.md, 'Vocabulary size').",
+        "subword-bpe exactly and is the default; 200, 5000 and 50000 trace how the "
+        "unit sits between phone and wordphn, and past it (results.md, "
+        "'Vocabulary size').",
     )
     vocab_sizes = parser.parse_args().vocab_size
 

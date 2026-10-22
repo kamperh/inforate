@@ -21,15 +21,13 @@ data/librispeech-alignments
 design.pdf
 results.pdf
 reproduce.pdf
+paper.pdf
 
 # Everything under docs/: the figures, the reference material carried over from the
 # predecessor project, and the superseded material kept because this is not a git
 # repository. None of it is needed to reproduce a result, and docs/assets/ is someone
 # else's output rather than this project's source
 docs/
-
-# Currently I don't want paper.md to be tracked either.
-paper.md
 
 # Python
 __pycache__/

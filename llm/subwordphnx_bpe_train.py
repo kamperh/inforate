@@ -38,12 +38,13 @@ if __name__ == "__main__":
     # See the printed line below for the actual one.
 
     seed = args.seed
-    # Every size run so far (200 to 5000) is small enough for the same large batch as
-    # subword-bpe; the softmax in cross_entropy is the binding cost and it scales with
-    # the vocabulary, so a much larger size would need batch_size/accumulation_steps
-    # moved to word's 2/20. The 81920-token effective batch is unchanged either way
-    batch_size = 10
-    accumulation_steps = 4
+    # The softmax in cross_entropy is the binding memory cost and it scales with the
+    # vocabulary, so the batch follows the size rather than being fixed: 200 to 5000
+    # take subword-bpe's 10/4, as syllable does at 11,427, while anything larger takes
+    # word and wordphn's 2/20, verified at their own 58,006 and 56,296. The
+    # 81920-token effective batch is identical either way, so the canonical setup is
+    # unchanged and only the memory profile differs
+    batch_size, accumulation_steps = (2, 20) if vocab_size_arg > 20000 else (10, 4)
     num_workers = 0
     ctx_win_size = 2048
     unit_name = f"subwordphnx-bpe{vocab_size_arg}"  # Must match the `name` passed to

@@ -148,14 +148,15 @@ story: a fit is deterministic given its training data, with no initialisation an
 no SGD, so re-running at a different seed changes nothing. For `llm/` there is a
 second source, measured on 2026-09-07/08 with three extra seeds per unit, on
 2026-10-08/09 for the four wordphn units, on 2026-10-09 for `subwordphnx-BPE-2000`,
-and on 2026-10-12/13 with one further seed for every unit in `results.md`'s headline
-table and three more at each end of the subwordphnx sweep:
+on 2026-10-12/13 with one further seed for every unit in `results.md`'s headline
+table and three more at each end of the subwordphnx sweep, and on 2026-10-14 for
+`subwordphnx-BPE-50000`, which was run at five seeds from the start:
 
 - Per-unit SD across **five seeds** is **0.043 to 0.118 bits/s** for the seven original
   units, so the noise floor for a *difference* between two independently trained
   ones, `sqrt(sa^2 + sb^2)`, is roughly **0.1 bits/s**. That is the figure a neural
   gap between them must clear.
-- **The floor is not universal.** Four of the fourteen units are worse by a
+- **The floor is not universal.** Four of the fifteen units are worse by a
   factor of two to six: `subwordphnx-BPE-5000` at **0.157**, `wordphn-BPE-1000` and
   `wordphn-BPE-5000` at **0.235** each and `subwordphnx-BPE-2000` at **0.279**, the
   worst in the project. A difference involving one of them must clear about **0.16 to
@@ -163,8 +164,13 @@ table and three more at each end of the subwordphnx sweep:
   unit, wordphn and wordphn-BPE-200 included, sits at 0.12 or below, and
   `subwordphnx-BPE-200` at **0.015** is the quietest in the project by a factor of
   nearly three.
+- **One tokenisation holds the whole range.** The four `subwordphnx-BPE` vocabularies
+  measure **0.015**, **0.279**, **0.157** and **0.062**, so the project's quietest unit
+  and its noisiest differ only in vocabulary size, the floor is not monotone in that
+  size, and the largest vocabulary is back among the quiet ones. Nothing about a unit's
+  size, vocabulary or batch configuration predicts its floor.
 - **Within that band the floor is roughly architecture-independent**: 0.015 to 0.118
-  across vocabularies from 41 to 63,002 tokens and two batch configurations, with the
+  across vocabularies from 41 to 63,002 tokens and both batch configurations, with the
   low extreme only making differences cheaper to establish, so 0.1 stays a conservative
   floor for a difference between two of them. The four outliers show that it cannot
   simply be assumed for a new unit, which is why the four wordphn units were seeded
@@ -178,6 +184,13 @@ table and three more at each end of the subwordphnx sweep:
   own two-run spread, which cost two of the four comparisons its second run had bought.
   Nothing in the two-run numbers marked the one that would hold. More than five seeds
   at vocabulary 2,000 are what the rest of that sweep needs.
+- **A measured floor applied to one run is not safe either.**
+  `subwordphnx-BPE-50000` reads 0.18 bits/s *below* `wordphn` at seed 0 and 0.03
+  *above* it on five-seed means, because seed 0 is wordphn's worst run of five and
+  tied-best for the new unit. Written up from the canonical run it would have been the
+  first unit in the project to beat its own word-level counterpart from below. Where a
+  pair is within about twice its floor, quote the means; see `results.md`,
+  "Subwordphnx-BPE", "Vocabulary size".
 - The seed varies initialisation and the random training-window sampling. It does
   **not** vary the augmentation draw, fixed when the mmap is built at
   `AUGMENT_SEED = 0`, nor the learned BPE merges, so this is retrain-on-fixed-data
@@ -187,7 +200,7 @@ table and three more at each end of the subwordphnx sweep:
   be, and syllable did it again at the fifth run, doubling from 0.038 to 0.074, so
   short-run reads are not safe here.
 - Of the 21 pairwise comparisons among the original seven units, **16 are clear, 2
-  marginal and 3 within noise**; the full set over all fourteen units is 91, of which
+  marginal and 3 within noise**; the full set over all fifteen units is 105, of which
   the 34 further pairs within the wordphn family and the original seven are in
   `results.md`, "Wordphn", and the subwordphnx family's own in "Subwordphnx-BPE".
   The defensible ranking over the four paper units is
@@ -641,7 +654,8 @@ account for how sharply the unit degrades at 5000 merges.
 
 `subwordphnx-BPE-v` is `subword-BPE` with the alphabet swapped: standard subword BPE
 run over **phones** instead of characters, with the same HuggingFace `BpeTrainer`, at
-vocabulary size `v`, run at 200, 2000 and 5000. So it is the phonetic counterpart of
+vocabulary size `v`, run at 200, 2000, 5000 and 50000. So it is the phonetic
+counterpart of
 the project's one non-lexical spelling unit, and it completes the realisation ladder:
 phone, subwordphnx-BPE, wordphn, wordphn-BPE-k, against subword-BPE, word, word-BPE-k
 on the spelling side.
@@ -686,34 +700,53 @@ but the segmentation *depended* on where the words divided, so the piece sequenc
 carries that information back: `DH-AH K-AE-T` ("the cat") and a hypothetical one-word
 `DH-AH-K AE-T` tokenise differently from the same phones. How much it carries grows
 with the vocabulary, since the share of dev-clean word tokens emitted as a *single*
-piece does: 47.3% at 200, 75.8% at 2000 and 85.8% at 5000. Any comparison of this unit
+piece does: 47.3% at 200, 75.8% at 2000, 85.8% at 5000 and 98.8% at 50000. Any
+comparison of this unit
 against `phone` therefore mixes better modelling with more information, and the mixture
 is not constant along the sweep; `results.md`, "Subwordphnx-BPE", is where that is
 unpicked.
 
-**Vocabulary size makes it an interpolation between `phone` and `wordphn`.** At the
-bottom its pieces are single phones and at the top they are whole words, so the unit
+**Vocabulary size makes it an interpolation between `phone` and `wordphn`, up to the
+point where it stops being one.** At the
+bottom its pieces are single phones and at 5000 they are mostly whole words, so over
+that range the unit
 slides continuously between two units the project already has. That is the reason for
 sweeping it, and the reason it is the only unit here whose vocabulary size is swept at
-all. One consequence to keep in view: a smaller vocabulary merges less and so leaves a
+all. **At 50000 it is past the upper anchor rather than approaching it**: its pieces
+average 3.529 phones against wordphn's 3.418 and its dev-clean stream is 55,214 pieces
+against wordphn's 56,992, because wordphn spells an unseen realisation out phone by
+phone while this unit splits it into two pieces. At that size the unit is wordphn with a
+subword backoff, so a comparison between the two is a comparison between backoffs and
+the interpolation reading applies to the three smaller sizes only.
+
+One consequence to keep in view: a smaller vocabulary merges less and so leaves a
 longer token stream, which at the fixed 20-epoch target means a larger step budget
-(5000 steps at vocab 200 against 2800 at 5000), so the sweep varies optimisation steps
+(5000 steps at vocab 200 against 2400 at 50000), so the sweep varies optimisation steps
 alongside vocabulary. That is the standing protocol, and word-BPE's own merge counts
-vary in the same way. A second consequence, found once the middle size was seeded: the
-whole sweep spans 0.52 bits/s while its middle point has a seed SD of 0.279, so no step
+vary in the same way. 50000 is also the one size that needs a different
+`batch_size`/`accumulation_steps`, 2/20 rather than 10/4, since the softmax no longer
+fits otherwise; the effective batch is 81920 tokens either way, so the canonical setup
+is unchanged. A second consequence, found once the middle size was seeded: the
+sweep's first three sizes span 0.52 bits/s while its middle point has a seed SD of
+0.279, so no step
 that passes through vocabulary 2000 can be separated from training noise. Seeding the
 two ends (2026-10-12/13) separates each of them from phone, at 9.8x and 6.5x their
 floors; the end-to-end step is 3.3x at seed 0 and 2.5x on the means, so it sits on the
-bar rather than above it. See "Uncertainty". The n-gram sweeps at the same three
-vocabularies, run 2026-10-12, recover the same ordering with every step clear of zero
+bar rather than above it. The outer step to 50000 is clear on both readings, 3.2x and
+3.8x. See "Uncertainty". The n-gram sweeps at all four
+vocabularies, run 2026-10-12 and 2026-10-14, recover the same ordering with every step
+clear of zero
 and no seed floor to clear, so the direction is established even though the neural
 magnitudes are not.
 At vocabulary 5000 the n-gram unit is indistinguishable from wordphn, the
 interpolation's upper endpoint measured directly; the neural unit is not, staying 0.60
-bits/s above wordphn at 3.5x the floor on five-seed means (2.1x at seed 0), so the two
-estimators agree on the direction of this sweep and not on where it ends.
+bits/s above wordphn at 3.5x the floor on five-seed means (2.1x at seed 0). At 50000 the
+n-gram unit is 0.30 bits/s *below* wordphn and level with `word`, while the neural unit
+is level with wordphn, 0.033 on the means against a 0.095 floor. So the two estimators
+agree on the direction of this sweep and not on where it ends, and neither ending is the
+one the interpolation picture predicted.
 
-**All three vocabularies have an n-gram counterpart**,
+**All four vocabularies have an n-gram counterpart**,
 `ngram/ngram_subwordphnx_bpe_sweep.py --vocab-size <v>`, built on `bpe.py`'s
 `SubwordPhoneXBPETokeniser`
 rather than on `llm/`'s HuggingFace path, so the two stages stay independent in the way
@@ -722,11 +755,12 @@ each other on identical data before the first sweep was run: at vocabulary 2000,
 of 1,958 merged pieces
 agree, one tie-break differs at the last merge, and the dev-clean segmentation is
 identical on 99.98% of word tokens, giving 74,644 pieces against 74,641. Vocabulary
-5000 gives 65,150 against 65,155. That is close
+5000 gives 65,150 against 65,155 and 50000 gives 55,223 against 55,214. That is close
 enough for the two stages to be scoring the same unit, which is what the
 cross-estimator comparison needs. 2000 was swept first, on 2026-10-09, for that
 comparison; 200 and 5000 followed on 2026-10-12, to put an estimator with no training
-noise under the vocabulary sweep.
+noise under the vocabulary sweep; 50000 on 2026-10-14, alongside the neural run at that
+size.
 
 ### Vocabulary rules
 
@@ -835,6 +869,7 @@ mmap or the epoch count cannot silently desynchronise them.
 | subwordphnx-bpe-200 | 20,427,217 | 249.4 | 5000 | 20.05 |
 | subwordphnx-bpe-2000 | 13,070,150 | 159.5 | 3200 | 20.06 |
 | subwordphnx-bpe-5000 | 11,457,890 | 139.9 | 2800 | 20.02 |
+| subwordphnx-bpe-50000 | 9,764,500 | 119.2 | 2400 | 20.13 |
 | word | 10,527,856 | 128.5 | 2600 | 20.23 |
 | syllable | 13,722,601 | 167.5 | 3400 | 20.30 |
 | word-BPE-200 | 9,593,621 | 117.1 | 2300 | 19.64 |
@@ -845,7 +880,7 @@ mmap or the epoch count cannot silently desynchronise them.
 | wordphn-BPE-1000 | 8,902,852 | 108.7 | 2200 | 20.24 |
 | wordphn-BPE-5000 | 8,227,336 | 100.4 | 2000 | 19.91 |
 
-The spread is **19.64 to 20.30** over the fourteen units, about 3% end to end, and it
+The spread is **19.64 to 20.30** over the fifteen units, about 3% end to end, and it
 is an artefact of the rounding rather than a choice: the units with the fewest tokens
 have the coarsest grid, since 100 steps is a larger fraction of an epoch for them.
 Token counts differ by unit because a tokenisation changes how many tokens the
@@ -860,16 +895,22 @@ legibility than it buys in precision.
 
 **GPU feasibility.** On this machine's RTX 3070 (8GB), `batch_size=10` with
 `accumulation_steps=4` fits for phone, syllable, and the four units whose vocabulary is
-a few thousand at most: subword-bpe and the three subwordphnx units. Word, wordphn and
+a few thousand at most: subword-bpe and the three smaller subwordphnx units. Word,
+wordphn, subwordphnx-bpe-50000 and
 both BPE families above them need `batch_size=2` with `accumulation_steps=20` for the
 same effective batch: the
-dominant memory cost is the softmax in `cross_entropy` over a ~58k-94k vocabulary,
+dominant memory cost is the softmax in `cross_entropy` over a ~50k-94k vocabulary,
 independent of model size. Verified empirically at 200 merges, where
 `batch_size=3` still OOMs and `batch_size=2` peaks at 5.29GB.
+`llm/subwordphnx_bpe_train.py` is the one training script that picks between the two
+rather than fixing one, since its `--vocab-size` spans both regimes: `2`/`20` above
+20000 and `10`/`4` otherwise.
 
 **Storage.** The flat training stream is a `uint16` mmap for phone, subword-bpe, all
-three subwordphnx units, word, wordphn and syllable, and `uint32` for the two BPE-merge
-families, word-BPE and wordphn-BPE. That was necessary when word-BPE
+four subwordphnx units, word, wordphn and syllable, and `uint32` for the two BPE-merge
+families, word-BPE and wordphn-BPE. At vocabulary 50000 the subwordphnx stream still
+fits `uint16` with room to spare, the assert in its prepare script being the check.
+`uint32` was necessary when word-BPE
 carried ~89,248 units, over `uint16`'s 65,535 maximum; `--min-count 2` brought it
 to 58,206-63,002, so `uint16` would now fit, but the existing mmaps and
 checkpoints are `uint32` and changing it would mean regenerating and retraining
@@ -986,9 +1027,10 @@ write-up the numbers would be regenerated on test-clean with dev-clean kept for
 selection; the units' ordering is not expected to move, but nothing here establishes
 that.
 
-**The middle of the subwordphnx vocabulary sweep is unsettled.** All three sizes now
-have five seeds, but vocabulary 2,000's own floor of 0.279 is wider than the whole
-descent, so every step through it stays unseparated from training noise, and its spread
+**The middle of the subwordphnx vocabulary sweep is unsettled.** All four sizes now
+have five seeds, and the outer step from 5,000 to 50,000 is clear on both readings, but
+vocabulary 2,000's own floor of 0.279 is wider than the descent through it,
+so every step through it stays unseparated from training noise, and its spread
 looks bimodal rather than Gaussian, so more than another three runs would be needed.
 See "Uncertainty".
 

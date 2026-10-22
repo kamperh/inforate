@@ -90,8 +90,11 @@ BASE = {
             "tokenizer": lambda v=v: SubwordPhoneXBpeTokenizer(
                 DATA_DIR / "subwordphnx-bpe-mmap" / f"subwordphnx-bpe{v}-tokenizer.json"
             ),
+            # 50,000 sits just under wordphn's 56,296, so it takes word and wordphn's
+            # batch size; the three small sizes keep DEFAULT_BATCH_SIZE
+            **({"batch_size": 4} if v > 20000 else {}),
         }
-        for v in (200, 2000, 5000)
+        for v in (200, 2000, 5000, 50000)
     },
     "word": {
         "tier_name": "words",
@@ -173,7 +176,7 @@ UNITS = {
         / "opt125m-subword-bpe-librispeech.pt",
         # Canonical run: lr_max=1e-3, 3300 steps.
     },
-    # Canonical runs, lr_max=1e-3, at three vocabulary sizes; see results.md,
+    # Canonical runs, lr_max=1e-3, at four vocabulary sizes; see results.md,
     # "Subwordphn-BPE".
     **{
         f"subwordphnx-bpe-{v}": {
@@ -182,7 +185,7 @@ UNITS = {
             / f"opt125m-subwordphnx-bpe{v}-librispeech"
             / f"opt125m-subwordphnx-bpe{v}-librispeech.pt",
         }
-        for v in (200, 2000, 5000)
+        for v in (200, 2000, 5000, 50000)
     },
     "word": {
         **BASE["word"],
@@ -252,7 +255,8 @@ UNITS = {
     # independently trained units must clear. Seeds 1-3 were run alongside each unit's
     # canonical seed-0 run, seed 4 on 2026-10-12, so twelve units have five runs each.
     # subwordphnx-BPE at 200 and 5000 were single runs until then and were taken to
-    # five runs on 2026-10-13, so every unit here now has five.
+    # five runs on 2026-10-13; 50000 was added on 2026-10-14 and taken to five the same
+    # day, so every unit here has five.
     # See results.md, "Seed variance". The pre-augmentation-fix seed dumps were kept
     # in llm/per_utterance/superseded/preaug-seeds/ until 2026-10-13, when they were
     # pruned; a subdirectory is the place for a superseded dump, since the default
@@ -279,6 +283,7 @@ UNITS = {
             ("subwordphnx-bpe-2000", "subwordphnx-bpe2000", (1, 2, 3, 4)),
             ("subwordphnx-bpe-200", "subwordphnx-bpe200", (1, 2, 3, 4)),
             ("subwordphnx-bpe-5000", "subwordphnx-bpe5000", (1, 2, 3, 4)),
+            ("subwordphnx-bpe-50000", "subwordphnx-bpe50000", (1, 2, 3, 4)),
         )
         for seed in seeds
     },

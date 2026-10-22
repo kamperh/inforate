@@ -78,24 +78,18 @@ UNITS = {
     "wordphn-bpe-5000": (
         WORDPHN_TIER, None, wordphn_bpe_spelling_of, partial(BPETokeniser, 5000)
     ),
-    "subwordphnx-bpe-200": (
-        WORDPHN_TIER,
-        None,
-        subwordphnx_bpe_spelling_of,
-        partial(SubwordPhoneXBPETokeniser, merges_for(200)),
-    ),
-    "subwordphnx-bpe-2000": (
-        WORDPHN_TIER,
-        None,
-        subwordphnx_bpe_spelling_of,
-        partial(SubwordPhoneXBPETokeniser, merges_for(2000)),
-    ),
-    "subwordphnx-bpe-5000": (
-        WORDPHN_TIER,
-        None,
-        subwordphnx_bpe_spelling_of,
-        partial(SubwordPhoneXBPETokeniser, merges_for(5000)),
-    ),
+    # One entry per vocabulary size, built in a loop rather than written out four
+    # times: these differ only in the merge count, as llm/eval_bitrate.py's own
+    # subwordphnx entries do
+    **{
+        f"subwordphnx-bpe-{v}": (
+            WORDPHN_TIER,
+            None,
+            subwordphnx_bpe_spelling_of,
+            partial(SubwordPhoneXBPETokeniser, merges_for(v)),
+        )
+        for v in (200, 2000, 5000, 50000)
+    },
 }
 
 

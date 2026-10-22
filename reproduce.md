@@ -122,6 +122,7 @@ why that branch never actually fires.
 python ngram/ngram_subwordphnx_bpe_sweep.py --vocab-size 200
 python ngram/ngram_subwordphnx_bpe_sweep.py --vocab-size 2000
 python ngram/ngram_subwordphnx_bpe_sweep.py --vocab-size 5000
+python ngram/ngram_subwordphnx_bpe_sweep.py --vocab-size 50000
 ```
 
 Writes `ngram/ngram_subwordphnx_bpe<v>_sweep.md`. Subword BPE over phones with every
@@ -133,11 +134,12 @@ to match `llm/subwordphnx_bpe_train.py`'s own flag, and the merge count is it mi
 1,958 merges in both stages. Reads the derived `wordphones` tier, for the word grouping
 the confinement needs. Nothing can go out of vocabulary, as for `phone`.
 
-All three of the neural stage's vocabularies are run: 2000 on 2026-10-09, to ask whether
+All four of the neural stage's vocabularies are run: 2000 on 2026-10-09, to ask whether
 the estimator changes the verdict on the unit, then 200 and 5000 on 2026-10-12, to ask
-the same of its vocabulary sweep. About 9 minutes each. Each size is independent, so
+the same of its vocabulary sweep, and 50000 on 2026-10-14, to find where that sweep
+ends. About 9 minutes each. Each size is independent, so
 they can be run in any order or in parallel; they were run sequentially to keep peak
-memory down, vocabulary 200 being the longest piece stream of the three.
+memory down, vocabulary 200 being the longest piece stream of the four.
 
 ## llm/ stage
 
@@ -183,16 +185,16 @@ python llm/subword_bpe_sample.py   # Optional: sample continuations from a check
 The same thing over phones instead of characters (same `BpeTrainer`), with merges
 confined to a word so no piece crosses a word boundary, which is what makes it the
 faithful counterpart of subword-BPE. Reads the derived `wordphones` tier, since that is
-where the word grouping is; same phones, same seconds. Run at three vocabulary sizes,
-200/2000/5000.
+where the word grouping is; same phones, same seconds. Run at four vocabulary sizes,
+200/2000/5000/50000.
 
 ```bash
-python llm/subwordphnx_bpe_prepare_mmap.py --vocab-size 200 2000 5000
-for v in 200 2000 5000; do
+python llm/subwordphnx_bpe_prepare_mmap.py --vocab-size 200 2000 5000 50000
+for v in 200 2000 5000 50000; do
   python llm/subwordphnx_bpe_train.py --vocab-size $v
 done
 python llm/eval_bitrate.py --units subwordphnx-bpe-200 subwordphnx-bpe-2000 \
-  subwordphnx-bpe-5000
+  subwordphnx-bpe-5000 subwordphnx-bpe-50000
 ```
 
 `--vocab-size` takes several sizes in one prep run on purpose: deriving the
@@ -205,6 +207,12 @@ realisation, which is the confinement holding. The comparisons that matter are a
 `phone` and `wordphn`, the two units this family interpolates between, which
 `utils/bootstrap.py` pairs only against `word`, so those need its `discover`/`report`
 called directly. See `results.md`, "Subwordphnx-BPE".
+
+The train script reads `batch_size`/`accumulation_steps` off `--vocab-size` rather than
+fixing them, so 50000 trains at 2/20 and the smaller sizes at 10/4; the effective batch
+is 81,920 tokens either way. 50000 also needs its own inference batch size, which
+`llm/eval_bitrate.py` already carries. Per run on this machine: 50000 takes about 55
+minutes against 200's 47, on a 2400-step budget against 5000.
 
 ### Word
 
@@ -308,7 +316,7 @@ against the full dev-clean set; writes `llm/eval_bitrate.md`.
 
 ## Seed variance
 
-Four extra seeds per unit, in six batches, oldest first below, so all fourteen units
+Four extra seeds per unit, in seven batches, oldest first below, so all fifteen units
 have five runs each. `--seed` is a permanent flag on every `<unit>_train.py`
 (default 0, the canonical value), defined once in `llm/train_args.py` alongside `--tag`,
 `--lr-max`, `--epochs` and `--overwrite`; it seeds torch, numpy and python, so it varies
@@ -423,6 +431,20 @@ done
 python utils/bootstrap.py --seeds
 ```
 
+`subwordphnx-bpe-50000` was trained and seeded on 2026-10-14, four runs after the
+canonical one, about three hours and forty minutes, so it never had a verdict written
+against a borrowed or single-run floor. The prepare step is shared with the canonical
+run and is not repeated:
+
+```bash
+for s in 1 2 3 4; do
+  python llm/subwordphnx_bpe_train.py --vocab-size 50000 --seed $s --tag seed$s
+done
+python llm/eval_bitrate.py --units subwordphnx-bpe-50000-seed1 \
+  subwordphnx-bpe-50000-seed2 subwordphnx-bpe-50000-seed3 subwordphnx-bpe-50000-seed4
+python utils/bootstrap.py --seeds
+```
+
 Each unit's seed tuple is listed in `llm/eval_bitrate.py`'s `UNITS` comprehension, and
 has to gain the new seed before `--units <unit>-seed<n>` will resolve.
 
@@ -449,13 +471,15 @@ Order matters: `utils/bootstrap.py` reads the per-utterance dumps, so both scori
 must run first. `llm/eval_bitrate.py` writes its dumps as a side effect of the
 ordinary evaluation above, so it need not be run twice.
 
-`ngram/per_utterance.py` refits order 3 at 100% only (thirteen fits, ~1.5 h): each
+`ngram/per_utterance.py` refits order 3 at 100% only (fourteen fits, ~1.5 h): each
 (unit, order) pair is a separate fit, and that is the cell the headline claims use.
 `--units` names a subset, which is how the four wordphn dumps were added on 2026-10-08
-without recomputing the six already on disk, and the two subwordphnx-BPE sizes on
-2026-10-12 without recomputing the eleven; a fit is deterministic given its training
+without recomputing the six already on disk, the two subwordphnx-BPE sizes on
+2026-10-12 without recomputing the eleven, and vocabulary 50000 on 2026-10-14 without
+recomputing the thirteen; a fit is deterministic given its training
 data, so a dump only ever needs regenerating when the unit's tokenisation or spell-out
-rule changes.
+rule changes. The 50000 fit takes about seven minutes, most of it learning 49,958
+merges.
 
 `utils/bootstrap.py` reports marginal and paired intervals under both utterance-level
 and speaker-level resampling; the paired speaker-level numbers are the ones to quote.

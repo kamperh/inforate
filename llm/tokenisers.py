@@ -168,7 +168,7 @@ class SubwordPhoneXBpeTokenizer(PreTrainedTokenizerFast):
     counterpart of `SubwordBpeTokenizer`'s BPE over characters. Trained on LibriSpeech
     960h training utterances only, with the same `BpeTrainer`, so the only thing that
     differs from the character version is the alphabet: 39 phones in place of 27
-    letters. Run at vocabulary 200, 2000 and 5000.
+    letters. Run at vocabulary 200, 2000, 5000 and 50000.
 
     Merges are **confined to a word**, so no piece ever crosses a word boundary; the
     `x` in the unit name marks that. This is the faithful phonetic analogue of
