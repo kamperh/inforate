@@ -26,33 +26,6 @@ A second reason for this comparison is its link to human language processing, wh
 The third motivation is for the zero-resource speech processing community (which is where I come from). With both scientific and engineering perspectives, this community tries to learn linguistically meaningful units directly from unlabelled speech audio without any transcriptions. Studies have considered the discovery of phone-like units (), syllabic units (), words () and even phrase-like units (). But why should we be looking for particular types of units? To be clear: none of this paper deals with speech; all experiments are on transcribed phonetic sequences. But still, as guidance for this community, it is worth knowing whether some units are more efficient than others in terms of information rate.
 
 
-To be clear: none of this paper deals with speech; all experiments are on transcribed phonetic sequences. But answers in this idealised setting can still help us to know 
-
-
-But it is still worth asking: in this ideal setting, are some units more efficient than others?
-
-
-
-
-* * * 
-
-For me, one reason is that I want to know the relative efficiencies of these different linguistic tokenisations---this is scientifically useful to know. And these aren't reported in the literature (or at least not consistently). You find people reporting bitrates like 50 bps for phones (Lopes and Aguiar 2010; Flanagan et al. 2014) and 39 bps for syllables (Coupé et al. 2019).^[In defence of the latter, their goal was not to produce *the* bitrate of syllables.] But a closer reading reveales that these are not really comparable (because the definitions of bitrates are not consistent, and the data on which they are calculated are not the same). And information rates would always depend on the content.
-
-A second reason is that I come from the zero-resource speech processing community. To be clear: none of this paper deals with speech; all experiments are on transcribed phonetic sequences. But the question is still worth asking: in this ideal setting, are some units more efficient than others? This is particularly relevant to the zerospeech community, because some of us work explicitly on finding phone-like units (), while others have focussed on finding words (), while recently there has been a big push to syllable-like units (). Some early and more recent studies show that finding recurring phrases is even possible (). But, under a fixed modelling budget, are some units more efficient than others?
-
-* * *
-
-**Everything is at the phone level.** 
-
-**Maybe but in conclusion rather?** Understanding which linguistic units support efficient encoding is relevant to theories of human language processing. If language processing is shaped by pressures for efficient information transmission, the choice of representational units may play a role. Comparing phones, syllables, words and larger units provides a way to investigate how the granularity of linguistic representations affects information rate. Crucially, however, the relative efficiency of these units may depend on the learner's or processor's modelling capacity: representations that are equivalent in principle may differ in practice when learning and processing resources are limited. Quantifying these differences offers a computational perspective on the relationship between linguistic representations, information efficiency and finite modelling capacity. I'd be cautious about claiming that lower bitrate directly predicts human processing preferences. Your experiments establish a result about language models, not human cognition. The connection is strongest if you frame the work as providing a computational perspective on a question relevant to theories of human language processing.
-
-* * * 
-
-Why are we looking for words? Maybe some other unit is "optimal" in some sense? Maybe syllables or smaller units like phones. Or maybe much bigger units, like phrases?
-
-So I thought: what are the bitrates for these different units? Doing a quick literature search, you find people reporting bitrates like 50 bps for phones (Lopes and Aguiar 2010; Flanagan et al. 2014) and 39 bps for syllables (Coupé et al. 2019). But a closer reading reveales that these are not really comparable (because the definitions of bitrates are not consistent, and the data on which they are calculated are not the same).
-
-This is a quite boring talk, but I just want to show you the journey. If I were a bit more humble, I would have called the paper "The information rate of phones, syllables and words in English".
 
 
 
