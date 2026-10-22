@@ -19,21 +19,22 @@ python utils/inspect_example.py 84-121123-0001
 
 But, rather than phones, we can decide to tokenise the utterance into another linguistic unit, like syllables. The goal is still to transmit the phonetic content, but we just do it with a different set of units, e.g.\ "DH-AH S-T-EH-R K-EY-S G-R-OW-N-D". Using the optimal syllable-to-bits encoding scheme (now based on the syllable unit probabilities), I again encode the units, send the bits, you decode the bits into syllables, and then you decode the syllables into phones. A different tokenisation, but we've communicated the same phones exactly. Is this more efficient than the phone encoding? Rather than syllables, why not words? Now we have a single unit "S-T-EH-R-K-EY-S" (staircase). Or maybe can communicate even better with multi-word units like "DH-AH-S-T-EH-R-K-EY-S" (the staircase). By now you probably get the picture.
 
+This paper asks which units (phones, syllables, words, units longer than words, something in between) are the most efficient for communicating linguistic content. All experiments are done on transcribed phonetic sequences (obtained from forced alignments) on English data (audiobooks from the LibriSpeech corpus). Why do this comparison? First, the relative efficiencies of these different linguistic tokenisations are not available in the literature. Studies report bitrates like 50 bits-per-second (bps) for phones (Lopes and Aguiar 2010; Flanagan et al. 2014) and 39 bps for syllables (Coupé et al., 2019).^[In defence of the latter, their goal was not to produce *the* bitrate of syllables, but rather to compare information rates across different languages when encoding the same translated content.] A closer reading, however, reveals that even these bitrates are not directly comparable, because the measurement of information rate is not the same and the data differs. (To make a direct comparison, information rates have to be measured consistently and on the same data, as I do here.)
+
+A second reason for this comparison is its link to human language processing, which is likely shaped by pressures for efficient communication (Gibson et al. 2019). I do not want to state this link too strongly, because this paper presents a purely information theoretic analysis ignoring human mental effort, how the mental message is converted into the phonetic surface form in the first place, production and perception effort, and even noise over the communication channel. Nevertheless, characterising the relative information rates of different linguistic units may help inform theories of linguistic representation, including how the mental lexicon is organised (see e.g. Virpioja et al. 2018).
+
+The third motivation is for the zero-resource speech processing community (which is where I come from). With both scientific and engineering perspectives, this community tries to learn linguistically meaningful units directly from unlabelled speech audio without any transcriptions. Studies have considered the discovery of phone-like units (), syllabic units (), words () and even phrase-like units (). But why should we be looking for particular types of units? To be clear: none of this paper deals with speech; all experiments are on transcribed phonetic sequences. But still, as guidance for this community, it is worth knowing whether some units are more efficient than others in terms of information rate.
+
+
+To be clear: none of this paper deals with speech; all experiments are on transcribed phonetic sequences. But answers in this idealised setting can still help us to know 
+
+
+But it is still worth asking: in this ideal setting, are some units more efficient than others?
 
 
 
-* * *
 
- The goal is still for me to send you the phonetic content, but now we decide that, instead of phones, I first convert the sequence into syllables (e.g. ...). Now we decide on a syllable-to-bit encoding scheme, again I send you the bits, and you can decode the bits into syllables, and then decode the syllables into phones. Again we use conditional probabilities to assign bit sequences to (now) syllable types. A different tokenisation, but I can communicate the phones exactly. Is this more efficient than phones?
-
-
- This will take a certain number of bits. We will set our encoding scheme based on the conditional probabilities of the phones, so that we use the channel optimally.
-
-But, rather than phones, we can also decide to tokenise the utterance into other different types of units. The goal is still for me to send you the phonetic content, but now we decide that, instead of phones, I first convert the sequence into syllables (e.g. ...). Now we decide on a syllable-to-bit encoding scheme, again I send you the bits, and you can decode the bits into syllables, and then decode the syllables into phones. Again we use conditional probabilities to assign bit sequences to (now) syllable types. A different tokenisation, but I can communicate the phones exactly. Is this more efficient than phones?
-
-Rather than syllables, we can also decide on a different encoding scheme: let's create a tokenisation into words (where here each "word" corresponds to a unique phonetic realisation). Or maybe we can decide on even longer phrase-like units, such as ... . By now you probably get the picture.
-
-This paper asks which levels (phones, syllables, words, units longer than words) are the most efficient for communicating linguistic content. All experiments are done on transcribed phonetic sequences (obtained from forced alignments) on English data. Why do this comparison?
+* * * 
 
 For me, one reason is that I want to know the relative efficiencies of these different linguistic tokenisations---this is scientifically useful to know. And these aren't reported in the literature (or at least not consistently). You find people reporting bitrates like 50 bps for phones (Lopes and Aguiar 2010; Flanagan et al. 2014) and 39 bps for syllables (Coupé et al. 2019).^[In defence of the latter, their goal was not to produce *the* bitrate of syllables.] But a closer reading reveales that these are not really comparable (because the definitions of bitrates are not consistent, and the data on which they are calculated are not the same). And information rates would always depend on the content.
 
@@ -368,6 +369,10 @@ AI policy:
 "Information-theoretic analysis of tokenisation and text predictability in South African languages," in *SACAIR*, 2026.
 
 Byung-Doh Oh, William Schuler, “The Impact of Token Granularity on the Predictive Power of Language Model Surprisal”, https://arxiv.org/abs/2412.11940. 
+
+Virpioja et al. (2018), “Using Statistical Models of Morphology in the Search for Optimal Units of Representation in the Human Mental Lexicon.”
+
+Gibson et al. (2019), “How Efficiency Shapes Human Language.”
 
 
 
