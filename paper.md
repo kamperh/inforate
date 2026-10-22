@@ -17,7 +17,9 @@ Suppose I have a spoken utterance, and I want to send you the content of that ut
 python utils/inspect_example.py 84-121123-0001
 ```
 
-But, rather than phones, we can decide to tokenise the utterance into another linguistic unit, like syllables. The goal is still to transmit the phonetic content, but we just do it with a different set of units, e.g.\ "DH-AH S-T-EH-R K-EY-S G-R-OW-N-D". Using the optimal syllable-to-bits encoding scheme (now based on the syllable unit probabilities), I again encode the units, send the bits, you decode the bits into syllables, and then you decode the syllables into phones. A different tokenisation, but we've communicated the same phones exactly. Is this more efficient than the phone encoding? 
+But, rather than phones, we can decide to tokenise the utterance into another linguistic unit, like syllables. The goal is still to transmit the phonetic content, but we just do it with a different set of units, e.g.\ "DH-AH S-T-EH-R K-EY-S G-R-OW-N-D". Using the optimal syllable-to-bits encoding scheme (now based on the syllable unit probabilities), I again encode the units, send the bits, you decode the bits into syllables, and then you decode the syllables into phones. A different tokenisation, but we've communicated the same phones exactly. Is this more efficient than the phone encoding? Rather than syllables, why not words? Now we have a single unit "S-T-EH-R-K-EY-S" (staircase). Or maybe can communicate even better with multi-word units like "DH-AH-S-T-EH-R-K-EY-S" (the staircase). By now you probably get the picture.
+
+
 
 
 * * *
