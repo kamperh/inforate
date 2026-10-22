@@ -5,9 +5,7 @@ author: "[Herman Kamper](https://www.kamperh.com/)"
 
 ## Abstract
 
-Which linguistic units minimise the bitrate required to encode speech content: phones, syllables, words or larger units? 
-
-To transmit the content of an utterance over a binary channel, is it better to encode the utterance into its constituent phones, syllables, words or maybe larger units? This question has implications for theories of human language processing and the development of speech and language systems. Using a transcribed corpus of 1,000 hours of English read speech, I compare the information rates of phones, syllables, words, phrase-like units and intermediate tokenisations under classical n-gram and transformer-based language models. Although all units are equivalent under a perfect language model, words achieve the lowest bitrate under these constrained modelling budgets, with slightly longer units sometimes performing best. The results show that, when modelling capacity is limited, units larger than syllables but smaller than long multi-word phrases provide the most efficient representation in terms of information rate.
+Which linguistic units minimise the bitrate required to encode speech content: phones, syllables, words or maybe larger units? This question has implications for theories of human language processing and the development of speech and language systems. Using a transcribed corpus of 960 hours of English audiobooks, I compare the information rates of phones, syllables, words, phrase-like units and intermediate tokenisations. While all units are equivalent under a perfect language model, it makes sense to compare them using these limited-capacity models. The lowest bitrates are achieved using words, with slightly longer units sometimes performing best. The results show that, when modelling capacity is limited, units larger than syllables but smaller than long multi-word phrases provide the most efficient representation in terms of information rate.
 
 
 
