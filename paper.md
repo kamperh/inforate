@@ -11,7 +11,21 @@ Which linguistic units minimise the bitrate required to encode speech content: p
 
 ## Introduction
 
-Suppose I have a spoken utterance, and I want to send you the content of that utterance, i.e.\ the speech sounds in it. I write the utterance down phonetically, then I encode the phones in bits, you receive the bits, and (because we agreed on an encoding scheme), you can decode the bits and know what phones were in the utterance. For example, if the person said ... . This will take a certain number of bits. We will set our encoding scheme based on the conditional probabilities of the phones, so that we use the channel optimally.
+Suppose I have a spoken utterance, and I want to send you the content of that utterance, i.e.\ the speech sounds that it contain. I write the utterance down phonetically, then I encode the phones in bits, you receive the bits, and (because we agreed beforehand on an encoding scheme), you can decode the bits and know what phones were in the utterance. For example, if the utterance is "the staircase groaned" I would encode "DH AH S T EH R K EY S G R OW N D", as illustrated at the bottom in Figure 1. We assign bit sequences to each phone unit based on the probability of the unit, meaning our encoding scheme uses as few bits as possible (Shannon 1948; Clover and Thomas 2006; Sanderson 2026). We measure how many bits this optimal phone-based encoding uses.
+
+```
+python utils/inspect_example.py 84-121123-0001
+```
+
+But, rather than phones, we can decide to tokenise the utterance into another linguistic unit, like syllables. The goal is still to transmit the phonetic content, but we just do it with a different set of units, e.g.\ "DH-AH S-T-EH-R K-EY-S G-R-OW-N-D". Using the optimal syllable-to-bits encoding scheme (now based on the syllable unit probabilities), I again encode the units, send the bits, you decode the bits into syllables, and then you decode the syllables into phones. A different tokenisation, but we've communicated the same phones exactly. Is this more efficient than the phone encoding? 
+
+
+* * *
+
+ The goal is still for me to send you the phonetic content, but now we decide that, instead of phones, I first convert the sequence into syllables (e.g. ...). Now we decide on a syllable-to-bit encoding scheme, again I send you the bits, and you can decode the bits into syllables, and then decode the syllables into phones. Again we use conditional probabilities to assign bit sequences to (now) syllable types. A different tokenisation, but I can communicate the phones exactly. Is this more efficient than phones?
+
+
+ This will take a certain number of bits. We will set our encoding scheme based on the conditional probabilities of the phones, so that we use the channel optimally.
 
 But, rather than phones, we can also decide to tokenise the utterance into other different types of units. The goal is still for me to send you the phonetic content, but now we decide that, instead of phones, I first convert the sequence into syllables (e.g. ...). Now we decide on a syllable-to-bit encoding scheme, again I send you the bits, and you can decode the bits into syllables, and then decode the syllables into phones. Again we use conditional probabilities to assign bit sequences to (now) syllable types. A different tokenisation, but I can communicate the phones exactly. Is this more efficient than phones?
 

@@ -111,6 +111,13 @@ detailed experiment plan is drafted separately from this file.
   by side; they are nested, so 200's merges are the first 200 of 1000's and those the
   first 1000 of 5000's. `--verify` re-learns along the n-gram path and diffs, which is
   the check `design.md`, "Open issues", records as never having been run for this unit.
+  `inspect_example.py`: shows one utterance as all fifteen units tokenise it, reading
+  the saved tokenisers and loading no model, with the unit list and each unit's
+  tokeniser taken from `llm/eval_bitrate.py`'s own `BASE` so the two cannot diverge.
+  `--words N` truncates every unit at the Nth word's end time, so a short prefix stays
+  aligned across units, and `--markdown` emits a table. Per-utterance bit rates are
+  deliberately not printed: one utterance is far too little to average over, and the
+  ordering it gives does not resemble the corpus one.
 
 ## Design principles carried over from the predecessor project
 

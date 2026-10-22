@@ -455,6 +455,33 @@ top level of `llm/per_utterance/`, so a stale dump put in a subdirectory is stil
 ignored rather than mixed with current ones. The pre-fix figures quoted in `results.md`,
 "Seed variance", can no longer be regenerated without retraining those runs.
 
+## Worked example
+
+One utterance as every unit tokenises it, for a running example or a figure. Reads the
+saved tokenisers only; no model is loaded and nothing is re-learned, so it takes
+seconds.
+
+```bash
+python utils/inspect_example.py                       # first dev-clean utterance
+python utils/inspect_example.py 1272-141231-0000
+python utils/inspect_example.py --words 9             # just the first nine words
+python utils/inspect_example.py --markdown --words 9  # a table to paste in a doc
+python utils/inspect_example.py --timings             # word tier with its times
+```
+
+The default, `1272-128104-0000` ("mister quilter is the apostle of the middle classes
+..."), is the first dev-clean utterance in the order the sweeps iterate. Its first nine
+words exercise every mechanism at once: "quilter" occurs nowhere in the 960h training
+transcripts, so the `~`-marked spell-out is the real backoff path rather than a
+contrived one, and "the" is realised `DH-IY` before "apostle" and `DH-AH` before
+"middle", which is the realisation-identity split `wordphn` is built on. All fifteen
+units take the unit list and their tokenisers from `llm/eval_bitrate.py`'s `BASE`, so
+what prints here is the tokenisation each unit was scored with.
+
+`--words N` truncates by the Nth word's *end time* rather than by a token count, so
+every unit is cut at the same point in the speech. Bit rates are deliberately not
+printed: see the script's own docstring.
+
 ## Confidence intervals
 
 Per-utterance bits are dumped by the two scoring paths, then resampled:
