@@ -3,6 +3,13 @@ title: "On the information rate of phones, syllables and words"
 author: "[Herman Kamper](https://www.kamperh.com/)"
 ---
 
+
+## To-do
+
+- [ ] Consistent notations for words (maybe italics?) and ARPABet phones. Maybe without quotes?
+
+
+
 ## Abstract
 
 Which linguistic units minimise the bitrate required to encode speech content: phones, syllables, words or maybe larger units? This question has implications for theories of human language processing and the development of speech and language systems. Using a transcribed corpus of 960 hours of English audiobooks, I compare the information rates of phones, syllables, words, phrase-like units and intermediate tokenisations. While all units are equivalent under a perfect language model, it makes sense to compare them using these limited-capacity models. The lowest bitrates are achieved using words, with slightly longer units sometimes performing best. The results show that, when modelling capacity is limited, units larger than syllables but smaller than long multi-word phrases provide the most efficient representation in terms of information rate.
@@ -17,21 +24,25 @@ Suppose I have a spoken utterance, and I want to send you the content of that ut
 python utils/inspect_example.py 84-121123-0001
 ```
 
-But, rather than phones, we can decide to tokenise the utterance into another linguistic unit, like syllables. The goal is still to transmit the phonetic content, but we just do it with a different set of units, e.g.\ "DH-AH S-T-EH-R K-EY-S G-R-OW-N-D". Using the optimal syllable-to-bits encoding scheme (now based on the syllable unit probabilities), I again encode the units, send the bits, you decode the bits into syllables, and then you decode the syllables into phones. A different tokenisation, but we've communicated the same phones exactly. Is this more efficient than the phone encoding? Rather than syllables, why not words? Now we have a single unit "S-T-EH-R-K-EY-S" (staircase). Or maybe can communicate even better with multi-word units like "DH-AH-S-T-EH-R-K-EY-S" (the staircase). By now you probably get the picture.
+But, rather than phones, we can decide to tokenise the utterance into another linguistic unit, like syllables. The goal is still to transmit the phonetic content, but we just do it with a different set of units, e.g.\ "DH-AH S-T-EH-R K-EY-S G-R-OW-N-D". Using the optimal syllable-to-bits encoding scheme (now based on the syllable unit probabilities), I again encode the units, send the bits, you decode the bits into syllables, and then you decode the syllables into phones. A different tokenisation, but we've communicated the same phones exactly. Is this more efficient than the phone encoding? Rather than syllables, why not words? Now we have a single unit "S-T-EH-R-K-EY-S" (staircase). Or maybe can communicate even better with multi-word units like "DH-AH-S-T-EH-R-K-EY-S" (the staircase); if in my dataset these two words very often co-occur, surely I could save bits by encoding these together. By now you probably get the picture.
 
 This paper asks which units (phones, syllables, words, units longer than words, something in between) are the most efficient for communicating linguistic content. All experiments are done on transcribed phonetic sequences (obtained from forced alignments) on English data (audiobooks from the LibriSpeech corpus). Why do this comparison? First, the relative efficiencies of these different linguistic tokenisations are not available in the literature. Studies report bitrates like 50 bits-per-second (bps) for phones (Lopes and Aguiar 2010; Flanagan et al. 2014) and 39 bps for syllables (Coupé et al., 2019).^[In defence of the latter, their goal was not to produce *the* bitrate of syllables, but rather to compare information rates across different languages when encoding the same translated content.] A closer reading, however, reveals that even these bitrates are not directly comparable, because the measurement of information rate is not the same and the data differs. (To make a direct comparison, information rates have to be measured consistently and on the same data, as I do here.)
 
 A second reason for this comparison is its link to human language processing, which is likely shaped by pressures for efficient communication (Gibson et al. 2019). I do not want to state this link too strongly, because this paper presents a purely information theoretic analysis ignoring human mental effort, how the mental message is converted into the phonetic surface form in the first place, production and perception effort, and even noise over the communication channel. Nevertheless, characterising the relative information rates of different linguistic units may help inform theories of linguistic representation, including how the mental lexicon is organised (see e.g. Virpioja et al. 2018).
 
-The third motivation is for the zero-resource speech processing community (which is where I come from). With both scientific and engineering perspectives, this community tries to learn linguistically meaningful units directly from unlabelled speech audio without any transcriptions. Studies have considered the discovery of phone-like units (), syllabic units (), words () and even phrase-like units (). But why should we be looking for particular types of units? To be clear: none of this paper deals with speech; all experiments are on transcribed phonetic sequences. But still, as guidance for this community, it is worth knowing whether some units are more efficient than others in terms of information rate.
+The third motivation is for the zero-resource speech processing community (which is where I come from). With both scientific and engineering aims, this community tries to learn linguistically meaningful units directly from unlabelled speech audio without any transcriptions. Studies have considered the discovery of phone-like units (), syllabic units (), words () and even phrase-like units (). But why should we be interested in particular units rather than others? To be clear: none of this paper deals with speech; all experiments are on transcribed phonetic sequences. But still, as guidance for this community, it is worth knowing whether some units are more efficient than others in an idealised communication setting.
+
+After defining information rate (measured in bits-per-second, bps) below, I first show that all units in fact have the same bitrate when we have a perfect model. This is because different tokenisations of the same input are just different encodings of the same underlying events and should therefore have the same probabilities. But this is only true with a perfect model -- something we never have. I therefore ask the more specific question of what the different information rates look like when using an actual model to estimate the probabilities. I consider two classes of models: class n-gram language models and modern transformer-based neural language models.
+
+I train n-gram and transformer models on different tokenisations of the same data. Apart from phones, syllables and words, I also apply byte pair encoding (BPE) () at the word-token level, generating multi-word units, like DH-AH-S-T-EH-R-K-EY-S (the staircase). A range of sanity checks at intermediate levels are also performed (like subword BPE merging phones). For the main comparison, all units have a one-to-one correspondents with their constituent phones, e.g. "two" and "too" are both represented as "T UW". This makes bitrates directly comparable across units since exactly the same content is being transmitted. But other sanity checks are also performed, e.g. operating at the character level.
+
+On the data used here, the best bitrates are achieved with a 20M-parameter transformer operating on words (?? bps). With $n$-grams, adding a small number of word-BPE merges improves results over isolated words. For both model classes, if too many word-merges are added, bitrate gets worse. Under a constrained modelling budget, it therefore seems that a balance needs to be struck between having a small set of shorter-duration units (e.g. phones; best bit rate ??? bps with transformer) vs having a much larger set of longer units (e.g. phrase-like multi-word combinations; ??? bps with transformer when adding 5000 word merges).
 
 
 
+## Information rate (bitrate)
 
-
-## Information rate (bitrate) (short)
-
-The definition of information rate (or bitrate) in bits per second is (Coupé et al. 2019):
+The definition of information rate (or bitrate), measured in bits per second, is (Coupé et al. 2019):
 $$
 \begin{aligned}
     \text{bitrate}
@@ -39,46 +50,54 @@ $$
     &= \frac{\text{\#units}}{\text{duration}} \times \text{bits per unit} \\
 \end{aligned}
 $$
-To know the average bits per unit, we need to decide on an encoding scheme. If we use entropy coding, where the number of bits are chosen based on the probability of the unit, then the bits per unit would be given by the entropy of the unit distribution (Shannon 1948; Clover and Thomas 2006; Sanderson 2026). But, to do this, we would need to know the true unit probabilities $P(w_t \mid w_{1:t-1})$. We don't have this; instead we have a model $P_{\theta}(w_t \mid w_{1:t-1})$. Under this model, we can then estimate the number of bits on held out data (of $T$ points), using:
+To know the average bits per unit, we need to decide on an encoding scheme to assign bit sequences to unit types. If we use entropy coding, where the number of bits are chosen based on the probability of the unit, then the bits per unit would be given by the entropy of the distribution over the units (Shannon 1948; Clover and Thomas 2006; Sanderson 2026). But, to do this, we would need to know the true unit probabilities $P(w_t | w_{1:t-1})$.^[I use $w$ here, but note that these units don't need to be words. The whole point is that we will look at different units.] We don't have these. Instead we have a model $P_{\theta}(w_t | w_{1:t-1})$. Under this model, we can then estimate the number of bits on held out data (consisting of $T$ tokens):
 $$
-\text{bits per unit} = - \frac{1}{T} \sum_{t = 1}^T \log_2 P_{\theta}(w_t \mid w_{1:t-1})
+\text{bits per unit} = - \frac{1}{T} \sum_{t = 1}^T \log_2 P_{\theta}(w_t | w_{1:t-1})
 $$
-This is technically the estimated cross-entropy rate when we use model $P_{\theta}$ to encode units coming from the true distribution $P$. From this, we can get the bitrate:
+Formally, this is the estimated cross-entropy rate when we use model $P_{\theta}$ to encode units coming from the true distribution $P$. From this, we can measure the bitrate under the model:
 $$
 \text{bitrate}
 = \frac{\text{bits}}{\text{duration}}
-= -\frac{1}{D} \sum_{t = 1}^T \log_2 P_{\theta}(w_t \mid w_{1:t-1})
+= -\frac{1}{D} \sum_{t = 1}^T \log_2 P_{\theta}(w_t | w_{1:t-1})
 = -\frac{1}{D} \log_2 P_{\theta}(w_{1:T})
 $$
-where $D$ is the duration in seconds.^[If you wanted to keep this simple and knew everyone had a background in information theory, you could also just say this is the sum of the Shannon surprisal (Shannon 1948) divided by the duration.]
+where $D$ is the duration in seconds of the data.
 
-**Idea:** Measure the bitrate of different units (phones, syllables, words) as a way to quantify encoding efficiency. Concretely, we ask what $w$ should be to give us low bitrates.
+**Research question.** What are the relative coding efficiencies of different linguistic units (phones, syllables, words, etc.)? Essentially we are asking what $w$ should be to give us low bitrates.
+
+**Other bitrate calculations.** Bitrate has been calculated differently elsewhere. The Zero Resource Speech Challenges, for instance, uses (Dunbar et al. 2019):
+$$
+    \text{bitrate} = - \frac{ T }{D} \sum_{w} P_{\theta}(w) \log_2 P_{\theta}(w)
+$$
+Here $P_{\theta}(w)$ is probabilities from a unigram model estimated from unit counts on the evaluation data. Calculating the expected value under this distribution is equivalent to estimating bitrate on the data on which the counts were obtained. Coupé et al. (2019) does something similar, but with a second-order model that takes the single preceding token into account:
+$$
+    \text{bitrate}
+    = -\frac{T}{D} \sum_{w_{t - 1}} \sum_{w_{t}} P_{\theta}(w_{t - 1}, w_t)
+        \log_2 \frac{ P_{\theta}(w_{t - 1}, w_t) }{ P_{\theta}(w_{t - 1})}
+$$
+Both these match my definition if (a) we make a first/second order modelling assumption, and (b) calculate bitrate on the same data used for the unigram/bigram model estimates. This is reasonable for coarse comparisons, but (a) units can presumably be encoded much more efficiently with larger contexts using a higher capacity $P_{\theta}(w)$, and (b) these measurements do not account for generalisation to unseen data.
 
 
 
-## But units don't matter: they all have the same (ideal) bitrate
+## But units don't matter: they all have the same ideal bitrate
 
+We now have an appropriate way to measure bitrate. There is still a question of the model $P_{\theta}$. In this section I briefly digress and first show that, under an ideal model, all units are equal. But a comparison is still meaningful if the model $P_{\theta}$ is constrained.
+
+The experiments in this paper consistently use phones as the smallest unit from which larger units are built. But for illustration here, let us assume we are using words and considering whether we should maybe use larger units. For instance, maybe in your data the word "York" is always preceded by "New". And, just for illustration, let us assume no other word ever follows "New". It then seems that we will save bits by having one unit "New York" instead of two separate units "New" and "York" for which we both need to assign some bits. Turns out this isn't true: it doesn't matter how you tokenise the input. The following should be true:
 $$
 \begin{aligned}
     P(\texttt{New York is beautiful})
-    &= P(\texttt{New}) \cdot P( \texttt{York} \mid \texttt{New}) \cdot P( \texttt{is} \mid \texttt{New York}) \cdots \\
-    &= P(\texttt{New York}) \cdot P( \texttt{is} \mid \texttt{New York}) \cdots
+    &= P(\texttt{New}) \cdot P( \texttt{York} | \texttt{New}) \cdot P( \texttt{is} | \texttt{New York}) \cdots \\
+    &= P(\texttt{New York}) \cdot P( \texttt{is} | \texttt{New York}) \cdots
 \end{aligned}
 $$
+But how does this make sense, given that we should have saved bits by merging "New" and "York". Turns out that if "York" always Followed "New" (and no other word did) $P(\texttt{York}|\texttt{New}) = 1$. And so $P(\texttt{New York}) = P(\texttt{New})$. Stated in information theoretic terms: it takes zero extra bits to transmit `York`. So whether you glue it onto `New` or leave it on its own, it costs the same number of bits. More formally, different tokenisations correspond to different random variables defined on the same underlying sample space. If I were able to obtain the true probabilities, then I could even split my inputs up into characters, and the result should still be the same as the above: $P(\texttt{N}) \cdot P(\texttt{e} | \texttt{N}) \cdot P(\texttt{w} | \texttt{Ne}) \cdots$.
 
-But how does this make sense (given our intuition about merging `New York` since they always co-occur -- in this fictitious world)?
+So apparently the question of the relative information rates of different units is silly. They are all the same.
 
-Let's say `York` truly always follow `New` (and no other word ever follows `New`). Then:
-$$
-    P( \texttt{York} \mid \texttt{New}) = 1
-$$
-And so $P(\texttt{New York}) = P(\texttt{New})$. Stated in information theoretic terms: it takes zero extra bits to transmit `York`. So whether you glue it onto `New` or leave it on its own, it costs the same number of bits.^[It is now for the first time how I see the amazingness of the connection between information theory and probability theory: you can think about probabilities as just communicating information, which you can think of in terms of bits.] More formally, the different ways of tokenising are simply different ways of defining random variables on the same underlying sample space. If I were able to obtain the true probabilities, then I could even split it up into characters, and the result should still be the same: $P(\texttt{N}) \cdot P(\texttt{e} \mid \texttt{N}) \cdot P(\texttt{w} \mid \texttt{Ne}) \cdots$.
+But note the assumption above: we assume we know the true probability distribution $P$, the actual distribution governing the real world. But no-one (except the Creator) actually knows these probabilities. So we always have a model $P_{\theta}$. This model will have finite capacity. And this model would be tied to a particular type of unit. And then the above doesn't happen: it now matters how you tokenise your input. If you had a really really powerful model that were really able to perfectly estimate the probabilities, then yes, it doesn't matter. But under limited capacity, it does matter which units you use.
 
-So apparently this question of the optimal number of bits with different encoding units is silly. They are all the same. Or are they?
-
-The assumption above is that we know the true probability distribution $P$, the actual distribution governing the real world. But no-one (except the Creator) actually knows these probabilities. So we always have a model $P_{\theta}$. And this model would be tied to a particular type of unit. And then the above doesn't happen: it now matters how you tokenise your input. If you had a really really powerful model that were really able to almost perfectly estimate the probabilities, then it doesn't matter -- they will all end up having the same bitrate. But under limited capacity, it does matter which units you use.
-
-So we refine our research question: What are the most efficient unit for encoding speech content *under limit capacity*?
+**Research question refined.** What are the relative coding efficiencies of different linguistic units *under limit modelling capacity*?
 
 
 
@@ -88,11 +107,11 @@ To limit the capacity, we choose (and then limit) some model type. In this paper
 
 ### N-gram models
 
-I use absolute discounting (Chen and Goodman 1999, \S2.6) in which higher-order n-gram language models are interpolated with lower-order models. Let's look at the highest order $n$, where we get the probability $P_n(w_t \mid w_{t - n + 1 : t - 1})$. To simplify the notation, we use $h = w_{t - n + 1 : t - 1}$ to denote the preceding symbols. We then have:
+I use absolute discounting (Chen and Goodman 1999, \S2.6) in which higher-order n-gram language models are interpolated with lower-order models. Let's look at the highest order $n$, where we get the probability $P_n(w_t | w_{t - n + 1 : t - 1})$. To simplify the notation, we use $h = w_{t - n + 1 : t - 1}$ to denote the preceding symbols. We then have:
 $$
-    P_n(w_t \mid w_{t - n + 1 : t - 1})
-    = P_n(w_t \mid h)
-    = \frac{\max \{ c(h, w_t) - d, 0\}}{c(h)} + (1 - \lambda_{h})P_{n - 1}(w_t \mid h')
+    P_n(w_t | w_{t - n + 1 : t - 1})
+    = P_n(w_t | h)
+    = \frac{\max \{ c(h, w_t) - d, 0\}}{c(h)} + (1 - \lambda_{h})P_{n - 1}(w_t | h')
 $$
 where $h' = w_{t - n + 2 : t - 1}$ drops the first symbol from $h$. For these probabilities to sum to one, we need
 $$
@@ -102,7 +121,7 @@ where $N_{1+}(h\cdot) = |\{w : c(h, w) > 0\}|$ is the number of distinct continu
 observed after $h$.
 We therefore get
 $$
-    P_n(w_t \mid h) = \frac{ \max \{ c(h, w_t) - d, 0\} } {c(h)} +  \frac{d N_{1+}(h\cdot)} { c(h) } P_{n - 1}(w_t \mid h')
+    P_n(w_t | h) = \frac{ \max \{ c(h, w_t) - d, 0\} } {c(h)} +  \frac{d N_{1+}(h\cdot)} { c(h) } P_{n - 1}(w_t | h')
 $$
 This recurses down to the unigram case:
 $$
@@ -261,9 +280,11 @@ Just because encoding is more efficient, it doesn't necessarily mean generation 
 
 
 
-## Conclusion
+## Conclusion and future work
 
 I do not claim that words are the most efficient units (especially given that the concept of what a word is is contested, and also quite language dependent). What I would claim is that the most efficient unit is something bigger than phones or syllables.
+
+Other languages, especially languages where the definition of a word is different.
 
 
 
@@ -346,6 +367,8 @@ Byung-Doh Oh, William Schuler, “The Impact of Token Granularity on the Predict
 Virpioja et al. (2018), “Using Statistical Models of Morphology in the Search for Optimal Units of Representation in the Human Mental Lexicon.”
 
 Gibson et al. (2019), “How Efficiency Shapes Human Language.”
+
+Dunbar et al. (2019), "The Zero Resource Speech Challenge 2019: TTS without T"
 
 
 
