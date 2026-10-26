@@ -107,6 +107,86 @@ n-gram sweeps, which have no training noise at all, put the realisation penalty 
 flat +0.43 to +0.46 bits/s at every merge depth with a reversal contrast of -0.008
 [-0.031, +0.016]. See "Wordphn".
 
+## Unit sizes
+
+How large each unit's inventory is, and how many tokens the same speech becomes under
+it. One row per unit of the headline table, in the same order.
+
+`types` is every distinct unit the tokenisation yields over the 960h training data,
+before any frequency threshold. `after min-count 2` is what survives the
+threshold described in `design.md`, "Vocabulary rules". The token columns are the
+streams actually trained and scored on, so they include one boundary token per
+utterance, and the 960h column also carries the 2% random augmentation.
+
+Sources: the tier type counts are `ngram/librispeech_stats.md`, the min-count column is
+each unit's saved vocabulary under `llm/data/`, and the token columns are each mmap's
+own `num_tokens` and `llm/eval_bitrate.md`. The six BPE families have no published
+pre-threshold count, so theirs was measured by encoding the 960h stream with the saved
+merges and counting distinct tokens with no threshold, which is what
+`WordBpeTokenizer.train_new` does to build its vocabulary; it reproduces the two saved
+`.pre-mincount2` vocabularies exactly.
+
+| unit | types | after min-count 2 | 960h tokens | dev-clean tokens |
+|---|---:|---:|---:|---:|
+| phone | 39 | -- | 33,745,655 | 197,530 |
+| subword-BPE | 2,000 | -- | 13,362,472 | 79,234 |
+| subwordphnx-BPE-200 | 200 | -- | 20,427,217 | 120,266 |
+| subwordphnx-BPE-2000 | 2,000 | -- | 13,070,150 | 77,344 |
+| subwordphnx-BPE-5000 | 5,000 | -- | 11,457,890 | 67,858 |
+| subwordphnx-BPE-50000 | 50,000 | -- | 9,764,500 | 57,917 |
+| syllable | 13,656 | 11,386 | 13,722,601 | 78,696 |
+| word | 89,048 | 57,977 | 10,527,856 | 60,412 |
+| wordphn | 84,163 | 56,255 | 10,334,163 | 59,695 |
+| wordphn-BPE-200 | 84,363 | 56,455 | 9,489,139 | 54,661 |
+| wordphn-BPE-1000 | 85,163 | 57,255 | 8,902,852 | 51,236 |
+| wordphn-BPE-5000 | 89,163 | 61,253 | 8,227,336 | 47,364 |
+| word-BPE-200 | 89,248 | 58,177 | 9,593,621 | 54,883 |
+| word-BPE-1000 | 90,048 | 58,977 | 8,991,501 | 51,447 |
+| word-BPE-5000 | 94,047 | 62,973 | 8,310,620 | 47,461 |
+
+**Six units have no threshold**, shown `--`: their inventory is set by `--vocab-size`
+(or is the ARPABET inventory itself) rather than by frequency, so there is nothing to
+cut and the two vocabulary columns would coincide. Those six are exactly the six that
+have nothing to spell out, which is not a coincidence: a unit needs a threshold only if
+its inventory is open-ended, and it needs a spell-out for the same reason. phone's 39 is
+the destressed phone inventory; its `vocab_size` of 41 adds the two special tokens.
+
+These columns reconcile exactly with the `vocab_size` of "Neural LM hyperparameters"
+below, which is a third number again:
+
+```
+vocab_size = after min-count 2 + 2 specials + spell-out inventory
+```
+
+the spell-out inventory being 27 characters (the 26 letters plus the apostrophe) for the
+spelling-based units and 39 phones for the realisation-based ones. So word reads 57,977
+here and 58,006 there, wordphn 56,255 against 56,296. Verified for all nine thresholded
+units.
+
+**The threshold cuts a constant number of types within each family**, 31,071 for word
+and all three word-BPE depths, 27,908 for wordphn and its 200- and 1000-merge depths
+(27,910 at 5000). Merging neither creates nor destroys a hapax: BPE only ever consumes
+pairs frequent enough to be merged, so the singleton tail it inherits is the plain
+unit's, untouched. The pre-threshold count is correspondingly just the plain unit's plus
+the merges -- 89,048 + 200 = 89,248 for word-BPE-200 -- exact except where a late merge
+duplicates an existing type, which costs one type at word-BPE-5000 and two at
+wordphn-BPE-5000.
+
+**Vocabulary and stream length move in opposite directions.** Merging buys a shorter
+stream at the price of a larger inventory, so the table's extremes are the
+deepest-merged units against phone: word-BPE-5000 holds the largest vocabulary of the
+fifteen at 62,973 types, the two 5000-merge units have the shortest streams (8.23M
+tokens for wordphn-BPE-5000, 8.31M for word-BPE-5000), and phone sits at the other end
+with 39 types and 33.7M tokens. That the same speech becomes anything from 8.2M to
+33.7M tokens is exactly why perplexity is not comparable across units while bit rate
+is; see `design.md`, "Scope and metrics".
+
+Subtracting the 2,703 boundary tokens from the dev-clean column gives the content
+stream, which can be compared against the raw tier counts in
+`ngram/librispeech_stats.md` to read off what the spell-out costs in tokens: word 57,709
+content against 54,402 word intervals is +3,307, wordphn +2,590, syllable +83, and phone
+exactly 0, since it never spells anything out.
+
 ## Neural LM hyperparameters
 
 Per-unit training configuration for `llm/<unit>_train.py`, since these diverge across

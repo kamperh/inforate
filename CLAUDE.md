@@ -154,8 +154,9 @@ write-up drawn from them, and is the user's own: do not edit it.
   protocol, the standing design principles, and the open issues. When a
   convention changes, change it here.
 - **`results.md`**: every result table. All of `ngram/`'s sweeps, plus an
-  `OPT-20M` column on each bit rate table for the neural stage, and a per-unit
-  hyperparameters table. Update by hand as each result lands, rather than
+  `OPT-20M` column on each bit rate table for the neural stage, a per-unit
+  hyperparameters table, and a per-unit table of inventory sizes and token counts
+  over 960h and dev-clean. Update by hand as each result lands, rather than
   regenerating.
 - **`reproduce.md`**: the exact commands to regenerate every result, one section
   per experiment stage. Commands only, no commentary. Build it up incrementally.

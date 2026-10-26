@@ -6,6 +6,7 @@ author: "[Herman Kamper](https://www.kamperh.com/)"
 
 ## To-do
 
+- [ ] Consistent use of tokens/types/units/tokenisation vs. classes.
 - [ ] Consistent notations for words (maybe italics?) and ARPABet phones. Maybe without quotes?
 
 
@@ -103,11 +104,11 @@ The assumption above is that we know the true probability distribution $P$, the 
 
 ## Models
 
-We consider two classes of models. In this paper, we consider two types of models: $n$-gram language models (Chen and Goodman 1999; Jurafsky and Martin 2026) and transformer-based neural language models (Vaswani et al. 2017).
+I consider two classes of models: $n$-gram language models (Chen and Goodman 1999; Jurafsky and Martin 2026) and transformer-based neural language models (Vaswani et al. 2017).
 
 ### Classic *n*-gram models
 
-I use absolute discounting (Chen and Goodman 1999, \S2.6) in which higher-order $n$-gram language models are interpolated with lower-order models. Discounted mass are then used to deal with types that are unseen at training time.
+For the $n$-gram models, I use absolute discounting (Chen and Goodman 1999, \S2.6) in which higher-order $n$-gram language models are interpolated with lower-order models. Discounted mass are used to deal with types that are unseen at training time.
 
 Let's look at the highest order $n$, where we get the probability $P_n(w_t | w_{t - n + 1 : t - 1})$. To simplify the notation, I use $h = w_{t - n + 1 : t - 1}$ to denote the preceding symbols. We then have:
 $$
@@ -131,13 +132,13 @@ $$
 $$
 The $+1$ in the denominator of $P_0$ reserves probability mass for out-of-vocabulary tokens (I will explain this below).
 
-Note that above I wrote a single discount value $d$ for all orders, but I actually set $d$ separately for each order, following the recommendation of Ney et al.\ (1994):
+Note that above I wrote a single discount value $d$ for all orders. These are in fact set separately for each order, following the recommendation of Ney et al.\ (1994):
 $$
     d = \frac{n_1}{n_1 + 2n_2}
 $$
-where $n_1$ and $n_2$ are the number of distinct $n$-grams ocurring exactly once and exactly twice in the training data (at this order). If these counts are zero, I fall back to a value of $d = 0.75$ (a value I did not tune). I also clamp the discount to the range $d \in [0.1, 0.9]$ to avoid very strange values.
+where $n_1$ and $n_2$ are the number of distinct $n$-grams ocurring exactly once and exactly twice in the training data (at this order). If these counts are zero, a value of $d = 0.75$ is used as fall-back (I did not tune this value). I also clamp the discount to the range $d \in [0.1, 0.9]$ to avoid very strange values.
 
-**Out-of-vocabulary tokens.** When dealing with words and syllables, we have to deal with tokens that are not seen durint training. These are all mapped to `<unk>`. But then we back off to a spelling model, paying bits to spell out the token into its constituent phones. So if we have a token "G-R-OW-N-D" (groaned) that has never been seen, it will be decomposed into five tokens "G R OW N D" (with a final end-of-word symbol).
+**Out-of-vocabulary tokens.** When dealing with words and syllables, we have to deal with tokens that are not seen during training. These are all mapped to `<unk>`. But then we back off to a spelling model, paying bits to spell out the token into its constituent phones. So if we have a token "G-R-OW-N-D" (groaned) that has never been seen, it will be decomposed into five tokens "G R OW N D" (with a final end-of-word symbol).
 
 What technically happens is that when we hit `<unk>` in the $P_0$ above, it doesn't use $\frac{1}{V + 1}$ (as it does for all the seen tokens). Instead it backs off to a spelling model $P_\mathrm{spell}(\mathrm{spelling}(w_t))$. This model is itself an absolute discounted $n$-gram using the interpolation as above, but trained on spelled out tokens. (I always use a third-order spelling model.) So, if we wanted to be a bit more formal, I would write
 $$
@@ -147,31 +148,41 @@ $$
     \frac{1}{V + 1} P_\mathrm{spell}(\mathrm{spelling}(w_t)) & \text{if\ } w_t \text{\ is unseen} \\
     \end{cases}
 $$
-How I visualise this is that $\frac{1}{1 + V}$ mass is allocated to each of the $V$ seen types. For unseen types, the remaining $\frac{1}{1 + V}$ mass is spread out, but non-uniformly based on the probability of their constituent spellings (i.e.\ a type that is easier to spell get a larger chunk of the $\frac{1}{1 + V}$-`<unk>`-mass). The spelling model ends with an end-of-word symbol (otherwise the probabilities would not be normalised).
+How I visualise this is that $\frac{1}{1 + V}$ mass is allocated to each of the $V$ seen types. For unseen types, the remaining $\frac{1}{1 + V}$ mass is spread out, but non-uniformly based on the probability of their constituent spellings (i.e.\ a type that is easier to spell gets a larger chunk of the $\frac{1}{1 + V}$-`<unk>`-mass). The spelling model ends with an end-of-word symbol (otherwise the probabilities would not be normalised).
 
-**Implementation.** In development experiments, I varied the amount of training data (25%, 50%, 75%, 100%) and the $n$-gram order (from 1 to 5) for all the different tokenisations (below). For most of the units, trigrams worked the best, and I therefore use this throughout. This is then our fixed $n$-gram budget.^[The only exception was phone models, where a 5-gram worked better. I give results for all the models with 5-grams as well in the Supporting Material.]
+**Implementation.** In development experiments, I varied the amount of training data (25%, 50%, 75%, 100%) and the $n$-gram order (from 1 to 5) for all the different tokenisations (below). For most of the units, trigrams worked the best, and I therefore use this throughout. This is then our fixed $n$-gram modelling budget.^[The only exception was phone models, where a five-gram worked better. I give results for all the models with five-grams as well in the Supporting Material.]
 
-### Neural models
+### Transformer models
 
-I use a decoder-only autoregressive transformer language model as the base. The architecture is a modification of the OPT-125M architecture (Zhang et al. 2022). I specifically reduced the model size so that the body (excluding the output layer predicting units) has approximately 20M parameters -- this is kept constant regardless of the unit on which the model is trained. In the tables I therefore call the model OPT-20M. Each model is a standard causal transformer using stacked blocks with masked multi-head self-attention and a feed-forward layer, pre-layer-norm, ReLU activations, learned positional embeddings, and tied input and output embeddings. The variant I use has 6 layers with 512 hidden dimensions, 8 heads, feedforward networks with 2048 dimensions and a context window of 2048 tokens. This gives all the models the same body of roughly 20M parameters.^[The number of tokens per parameter differ based on the unit, but for phone units this gives 1.69 tokens per parameters. I could probably have gotten away with even smaller models, but I didn't tune this: I picked 20M and moved on with life. But later you see that I do also check bitrates with a much bigger separately trained Qwen model as a sanity check. These results give me some confidence that the budget choice here is reasonable.] What does differ between the models depending on the target unit is the output layer. More detail is given on the different units below, but the output of a phone neural language model only has 39 classes (together with sentence-boundary and pad tokens) while the word model has roughly 58k classes.^[You could argue that I had to balance model sizes taking the (sometimes substantial) output layer into account. The problem is that it is not at all clear how this should be done. Also note that the word and all the word-BPE models have roughly the same number of output classes because of the way the vocabularies are constructed (details to follow).]
+I use a decoder-only autoregressive transformer language models based on a modification of the OPT-125M architecture (Zhang et al. 2022). I reduced the model size so that the body (excluding the output unit-predicting layer) has approximately 20M parameters. This is kept constant regardless of the tokenisation. Each model is a standard causal transformer using stacked blocks with masked multi-head self-attention and a feed-forward layer, pre-layer-norm, ReLU activations, learned positional embeddings, and tied input and output embeddings. The variant I use has 6 layers with 512 hidden dimensions, 8 heads, feedforward networks with 2048 dimensions and a context window of 2048 tokens. This gives all the models the same body of roughly 20M parameters.^[The number of tokens per parameter differ based on the unit, but for phones, this gives 1.69 tokens per parameter. I could probably have gotten away with even smaller models, but I didn't tune this: I picked 20M and moved on with life. But later you see that I do also check bitrates with a much bigger separately trained Qwen () model. This sanity check gives some confidence that the budget choice here is reasonable.] What does differ between the models depending on the unit is the output layer. More detail is given on the different units below, but the output of a phone neural language model only has 39 classes (together with sentence-boundary and pad tokens) while the word model has roughly 58k classes.^[You could argue that I had to balance model sizes taking the (sometimes substantial) output layer into account. The problem is that it is not at all clear how this should be done. Also note that the word and all the word-BPE models have roughly the same number of outputs because of the way the vocabularies are constructed (details to follow).]
 
-**HERE**
+**Out-of-vocabulary tokens.** As with the $n$-grams, sometimes we have unseen tokens at test time. We follow a similar spelling-out strategy here: an unseen word is spelled out in its constituent phones. For the transformer models, these spelled-out tokens are also marked to distinguish them from single-phone words, e.g. AA-R-D-W-UH-L-F (aardwolf) would be spelled out as ~AA ~R ~D ~W ~UH ~L ~F, which means that the pronunciation of the word "a" as AA is distinct from `~AA`, the latter being explicitly marked as a word-part. All training words not in the vocabulary are broken up this way. But, during training, I also randomly (2% of the time) break a word up into its constituent phones (whether it is seen or not). This is so that the model sees more broken up words at training time and is then better able to deal with unseen words at test time. The same procedure is followed with spelling out unseen syllables and word-level BPE units into their constituent phones.
 
-**Out-of-vocabulary tokens.** As with the $n$-grams, sometimes we have tokens at test time that have not been seen in the training data. We follow is similar spelling-out strategy here. Let us use word units as an example. To deal with this, unseen words are broken up into their constituent letters. These letters get their own markers, e.g. `aardwolf` gets broken up as `~a ~a ~r ~d ~w ...` (this means `a` as a word is distinct from `~a` which is a word-part). All training words not in the vocabulary are broken up this way. But I also randomly (2% of the time) break a word up into its constituent parts (whether it is seen or not). This is so that the model sees more broken up words at training time and is then better able to deal with unseen words at evaluation time.
-
-**Implementation.** All the neural models are trained with an effective batch size of 40 on a single NVidia RTX3070 (8Gb). I use AdamW optimisation (Loshchilov and Hutter 2017) with a linear warmup for 8% of the steps to a maximum learning rate of $\text{1}\cdot\text{10}^{-3}$ followed by a cosine decay to $\text{2}\cdot\text{10}^{-5}$ over the remaining steps. Models are trained for approximately 20 epochs; the step sizes are changed based on the unit granularity to ensure that the equivalent of roughly 20 passes is made over the encoded dataset. These values were chosen based on the original recipe from (Visser et al. 2026). The only change was to raise the maximum learning rate from $\text{5}\cdot\text{10}^{-4}$ to $\text{1}\cdot\text{10}^{-3}$; this slightly improved final performance across all the units (but the trends were always the same). I also experimented with training for more epochs, but this didn't help any of the units.
+**Implementation.** All the neural models are trained with an effective batch size of 40 on a single NVidia RTX3070 (8Gb). I use AdamW optimisation (Loshchilov and Hutter 2017) with a linear warmup for 8% of the steps to a maximum learning rate of $\text{1}\cdot\text{10}^{-3}$ followed by a cosine decay to $\text{2}\cdot\text{10}^{-5}$ over the remaining steps. Models are trained for approximately 20 epochs; the step sizes are changed based on the unit to ensure that the equivalent of roughly 20 passes is made over the encoded data. All these values were chosen based on the original recipe from (Visser et al. 2026). The only change was to raise the maximum learning rate from $\text{5}\cdot\text{10}^{-4}$ to $\text{1}\cdot\text{10}^{-3}$; this slightly improved final performance across all the units (but the trends were always the same). I also experimented with training for more epochs, but this didn't help any of the units. No further development experiments were done.
 
 
 
 ## Data and units
 
-**How many units (in terms of tokens)?**
+I perform experiments on the multi-speaker English LibriSpeech corpus of read audiobooks. Models are trained on forced alignments of the 960h training set and evaluated on dev-clean (4.5 hours of speech). The phone-level forced alignments uses an ARPABet set without stress markers, giving a set of 39 phones. The goal of this paper is to compare bitrates of different tokenisations of this same data. I compare phones, syllables, words, multi-word combinations obtained from BPE at the word-token level, as well as some intermediate units.
 
-I train on LibriSpeech 960h and evaluate on dev-clean (4.5 hours of speech). All the experiments are therefore conducted in English. For future work, it would be essential to also repeat this analysis on other languages.
+To obtain syllable units from the phone forced alignments, a rule-based method is used (Gorman 2013), as was also done in (Visser et al. 2026). Word boundaries are not taken into account, i.e.\ syllables can span across words. As noted in the introduction, words are defined here based on phonetic realisations, e.g.\ e.g. "two" and "too" are both represented as the word type "T UW". I do this because otherwise it isn't possible to directly recover the exact phone sequence from the word tokenisation, breaking the one-to-one correspondence needed for proper bitrate comparisons. The number of tokens and types for phones, syllabels and words in the training data are shown in the table below.
+
+| Units | Tokens | Types | Non-singleton types |
+|---|---:|---:|---:|
+| Phones | 33,464,416 | 39 | 39 |
+| Syllables | 13,025,947 | 13,656 | 11,386 |
+| Words | 9,403,427 | 84,163 | 56,255 |
+
+```
+librispeech_stats.md
+```
+
+
 
 **Phones.** Phone-level forced aligments for the data were produced using Montreal Forced Aligner (McAuliffe et al. 2017) using an ARPABet phone set. Stress markers are removed, leaving a set of 39 phones.
 
-**Syllables.** As in (Visser et al. 2026), a syllable tokenisation is obtained from the phone sequences using a rule-based method (Gorman 2013). Word boundaries are not taken into account, i.e.\ syllables can span over words. When encountaring an out-of-vocabulary syllable, the model backs off to a "spelled out" version of the syllable, where "spelling" here means using the constituent phones. (This spelling model is used in both the $n$-gram and neural models.)
+**Syllables.** As in (Visser et al. 2026), a syllable tokenisation is obtained from the phone sequences using a rule-based method (Gorman 2013). Word boundaries are not taken into account, i.e.\ syllables can span over words. When encountering an out-of-vocabulary syllable, the model backs off to a "spelled out" version of the syllable, where "spelling" here means using the constituent phones. (This spelling model is used in both the $n$-gram and neural models.)
 
 **Words.** For the word case, out-of-vocabulary words are spelled out as characters. For the neural model, only words that occur at least twice in the training data are used in the output vocabulary, resulting in 58k classes. Words occurring only once or not at all in the training data is therefore spelled out.
 

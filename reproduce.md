@@ -35,7 +35,12 @@ python ngram/ngram_lm.py                # toy fit-and-score sanity check
 ```
 
 `librispeech_stats.py` also reports the realisation-based word vocabulary (the
-`wordphn` unit), in its own section of the same file; re-run 2026-10-08 to add it. Its
+`wordphn` unit), in its own section of the same file; re-run 2026-10-08 to add it, and
+again 2026-10-23 to add a second section giving each unit's vocabulary at count >= 2.
+That second table is a descriptive statistic for `ngram/`, which applies no threshold,
+and the vocabulary itself for the neural stage: its 960h row reproduces each saved
+vocabulary under `llm/data/`, so running this is also a cross-check that the two stages
+count types the same way. Its
 `word_phone_units` is also what the two wordphn sweeps below build their tier from, and
 its `destress` is what the phone sweep uses, so it is the one definition of both rules
 inside `ngram/`.

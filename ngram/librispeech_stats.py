@@ -49,6 +49,12 @@ SETS = {
 CLEAN_WORD_RE = re.compile(r"^[a-z']+$")
 STRESS_RE = re.compile(r"\d+$")
 
+# The threshold the neural stage applies to word, wordphn and syllable, reported here
+# alongside the full inventories so the two can be compared; see design.md,
+# "Vocabulary rules", for why hapax legomena are cut. ngram/ applies no threshold, so
+# for that stage this is a descriptive statistic rather than a vocabulary it uses
+MIN_COUNT = 2
+
 # Alignment times are written to 2-3 decimals, so a word's last phone ends exactly at
 # the word's own end time; this only guards float round-trip error.
 BOUNDARY_EPS = 1e-6
@@ -86,6 +92,17 @@ def iter_textgrids(splits):
     for split in splits:
         paths.extend((DATA_ROOT / split).rglob("*.TextGrid"))
     return sorted(paths)
+
+
+def at_least(types, min_count=MIN_COUNT):
+    """How many types in a `Counter` occur at least `min_count` times.
+
+    Equivalent to `len(llm/data_common.build_min_count_vocab(..., min_count))` over the
+    same tier, so the 960h row of the table this feeds reproduces each unit's saved
+    vocabulary under `llm/data/` exactly, which is the check that the two stages are
+    counting the same thing.
+    """
+    return sum(1 for count in types.values() if count >= min_count)
 
 
 def stats_for_set(name, splits):
@@ -146,6 +163,10 @@ def stats_for_set(name, splits):
         "wordphn_tokens": wordphn_tokens,
         "wordphn_vocab": len(wordphn_types),
         "wordphn_hapax": sum(1 for c in wordphn_types.values() if c == 1),
+        "word_vocab_min": at_least(word_types),
+        "phone_inventory_min": at_least(phone_types),
+        "syll_inventory_min": at_least(syll_types),
+        "wordphn_vocab_min": at_least(wordphn_types),
         "multi_realisation_words": sum(1 for r in realisations_of.values() if len(r) > 1),
         "multi_word_realisations": sum(1 for w in words_of.values() if len(w) > 1),
         "dirty_words": sorted(dirty_words)[:20],
@@ -160,6 +181,16 @@ def format_row(s):
         f"({s['speech_seconds']:.0f}s) | {s['word_tokens']:,} | {s['word_vocab']:,} | "
         f"{s['phone_tokens']:,} | {s['phone_inventory']} | {s['syll_tokens']:,} | "
         f"{s['syll_inventory']:,} |"
+    )
+
+
+def format_min_count_row(s):
+    """One row of the min-count table: a separate, narrow table rather than four more
+    columns on the main one, which is already nine wide (see `format_realisation_line`).
+    """
+    return (
+        f"| {s['name']} | {s['word_vocab_min']:,} | {s['wordphn_vocab_min']:,} | "
+        f"{s['syll_inventory_min']:,} | {s['phone_inventory_min']} |"
     )
 
 
@@ -191,8 +222,21 @@ def main():
     )
     table = header + "\n" + "\n".join(format_row(s) for s in results) + "\n"
 
+    min_count_header = (
+        "| set | word | wordphn | syllable | phone |\n"
+        "|---|---:|---:|---:|---:|"
+    )
+    min_count_table = (
+        min_count_header
+        + "\n"
+        + "\n".join(format_min_count_row(s) for s in results)
+        + "\n"
+    )
+
     print()
     print(table)
+    print()
+    print(min_count_table)
 
     cleanliness_lines = []
     for s in results:
@@ -217,6 +261,16 @@ def main():
     with open(OUT_PATH, "w") as f:
         f.write("# LibriSpeech / dev-clean statistics\n\n")
         f.write(table)
+        f.write(f"\n## Vocabulary at count >= {MIN_COUNT}\n\n")
+        f.write(
+            "Types occurring at least "
+            f"{MIN_COUNT} times, i.e. the inventory left once hapax legomena are cut. "
+            "This is the vocabulary the neural stage builds (`design.md`, "
+            "\"Vocabulary rules\"); `ngram/` applies no threshold, so for that stage "
+            "the full inventories in the table above are the ones in use. The 960h row "
+            "reproduces each unit's saved vocabulary under `llm/data/` exactly.\n\n"
+        )
+        f.write(min_count_table)
         f.write("\n## Words-tier cleanliness check\n\n")
         for line in cleanliness_lines:
             f.write(f"- {line}\n")
