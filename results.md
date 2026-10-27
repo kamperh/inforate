@@ -29,6 +29,7 @@ one place. n-gram cells are the 100%-data fits from `ngram/ngram_*_sweep.md`; th
 | unit | ngram, order 3 | ngram, order 5 | neural, OPT-20M | seed SD |
 |---|---:|---:|---:|---:|
 | phone | 43.65 | 34.93 | 29.60 | 0.054 |
+| character | n/a | n/a | 28.85 | 0.136 |
 | subword-BPE | n/a | n/a | 28.20 | 0.118 |
 | subwordphnx-BPE-200 | 35.66 | 32.87 | 29.04 | 0.015 |
 | subwordphnx-BPE-2000 | 31.59 | 31.67 | 28.82 | 0.279 |
@@ -47,7 +48,7 @@ one place. n-gram cells are the 100%-data fits from `ngram/ngram_*_sweep.md`; th
 `seed SD` is the spread of that `OPT-20M` cell over **five independently trained
 seeds**, the canonical seed-0 run plus four retrains at the same setup, run
 2026-09-07/08, 2026-10-08/09, 2026-10-12/13 and 2026-10-14. It is the floor a
-difference between two units has to clear, and it is not a constant: across all fifteen
+difference between two units has to clear, and it is not a constant: across all sixteen
 units it runs from 0.015 to 0.279, a factor of eighteen, and a unit's own vocabulary
 sweep spans the whole of that range. The
 n-gram columns have no such column because an n-gram fit is deterministic, which makes
@@ -129,6 +130,7 @@ merges and counting distinct tokens with no threshold, which is what
 | unit | types | after min-count 2 | 960h tokens | dev-clean tokens |
 |---|---:|---:|---:|---:|
 | phone | 39 | -- | 33,745,655 | 197,530 |
+| character | 27 | -- | 40,940,836 | 239,459 |
 | subword-BPE | 2,000 | -- | 13,362,472 | 79,234 |
 | subwordphnx-BPE-200 | 200 | -- | 20,427,217 | 120,266 |
 | subwordphnx-BPE-2000 | 2,000 | -- | 13,070,150 | 77,344 |
@@ -144,12 +146,13 @@ merges and counting distinct tokens with no threshold, which is what
 | word-BPE-1000 | 90,048 | 58,977 | 8,991,501 | 51,447 |
 | word-BPE-5000 | 94,047 | 62,973 | 8,310,620 | 47,461 |
 
-**Six units have no threshold**, shown `--`: their inventory is set by `--vocab-size`
-(or is the ARPABET inventory itself) rather than by frequency, so there is nothing to
-cut and the two vocabulary columns would coincide. Those six are exactly the six that
-have nothing to spell out, which is not a coincidence: a unit needs a threshold only if
-its inventory is open-ended, and it needs a spell-out for the same reason. phone's 39 is
-the destressed phone inventory; its `vocab_size` of 41 adds the two special tokens.
+**Seven units have no threshold**, shown `--`: their inventory is set by `--vocab-size`
+(or is the ARPABET or character inventory itself) rather than by frequency, so there is
+nothing to cut and the two vocabulary columns would coincide. Those seven are exactly
+the seven that have nothing to spell out, which is not a coincidence: a unit needs a
+threshold only if its inventory is open-ended, and it needs a spell-out for the same
+reason. phone's 39 is the destressed phone inventory and character's 27 the 26 letters
+plus the apostrophe; their `vocab_size` of 41 and 29 adds the two special tokens.
 
 These columns reconcile exactly with the `vocab_size` of "Neural LM hyperparameters"
 below, which is a third number again:
@@ -174,18 +177,19 @@ wordphn-BPE-5000.
 
 **Vocabulary and stream length move in opposite directions.** Merging buys a shorter
 stream at the price of a larger inventory, so the table's extremes are the
-deepest-merged units against phone: word-BPE-5000 holds the largest vocabulary of the
-fifteen at 62,973 types, the two 5000-merge units have the shortest streams (8.23M
-tokens for wordphn-BPE-5000, 8.31M for word-BPE-5000), and phone sits at the other end
-with 39 types and 33.7M tokens. That the same speech becomes anything from 8.2M to
-33.7M tokens is exactly why perplexity is not comparable across units while bit rate
-is; see `design.md`, "Scope and metrics".
+deepest-merged units against character: word-BPE-5000 holds the largest vocabulary of
+the sixteen at 62,973 types, the two 5000-merge units have the shortest streams (8.23M
+tokens for wordphn-BPE-5000, 8.31M for word-BPE-5000), and character sits at the other
+end with 27 types and 40.9M tokens, having displaced phone's 39 and 33.7M as the
+smallest inventory and the longest stream. That the same speech becomes anything from
+8.2M to 40.9M tokens, a factor of five, is exactly why perplexity is not comparable
+across units while bit rate is; see `design.md`, "Scope and metrics".
 
 Subtracting the 2,703 boundary tokens from the dev-clean column gives the content
 stream, which can be compared against the raw tier counts in
 `ngram/librispeech_stats.md` to read off what the spell-out costs in tokens: word 57,709
 content against 54,402 word intervals is +3,307, wordphn +2,590, syllable +83, and phone
-exactly 0, since it never spells anything out.
+exactly 0, since it never spells anything out, as character never does either.
 
 ## Neural LM hyperparameters
 
@@ -209,6 +213,7 @@ matrix.
 | unit | vocab_size | params | status |
 |---|---:|---:|---|
 | phone | 41 | 19,985,920 | trained |
+| character | 29 | 19,979,776 | trained |
 | subword-bpe | 2,000 | 20,988,928 | trained |
 | subwordphnx-bpe-200 | 200 | 20,067,328 | trained |
 | subwordphnx-bpe-2000 | 2,000 | 20,988,928 | trained |
@@ -237,13 +242,14 @@ params = 19,964,928 + vocab_size x 512
 
 exactly, for every row above -- e.g. phone's 41-token vocab adds a negligible ~21K
 params, word's 58,006-token vocab adds ~29.7M. This is also why the word-BPE units
-(the largest vocabularies of the fifteen) have the most parameters despite using the
+(the largest vocabularies of the sixteen) have the most parameters despite using the
 same architecture as phone. subword-bpe and subwordphnx-bpe-2000 land on the same
 count because they are the same size by design, 2,000 pieces each.
 
 | unit | batch_size | accumulation_steps | max_steps | warmup_steps |
 |---|---:|---:|---:|---:|
 | phone | 10 | 4 | 8200 | 656 |
+| character | 10 | 4 | 10000 | 800 |
 | subword-bpe | 10 | 4 | 3300 | 264 |
 | subwordphnx-bpe-200 | 10 | 4 | 5000 | 400 |
 | subwordphnx-bpe-2000 | 10 | 4 | 3200 | 256 |
@@ -351,7 +357,7 @@ within a speaker are not independent.
 
 The bootstrap above covers evaluation uncertainty but holds each checkpoint fixed. Four
 extra seeds were run for every unit, everything else canonical: 20 epochs,
-`lr_max=1e-3`, same mmaps. Five seeds per unit for all fifteen, once the existing
+`lr_max=1e-3`, same mmaps. Five seeds per unit for all sixteen, once the existing
 seed-0 run is included. The seven original units were seeded on 2026-09-07/08;
 the four wordphn units on 2026-10-08/09, after their seed-0 results had already been
 written up against an *assumed* floor of 0.07, what that assumption cost being under
@@ -364,6 +370,7 @@ written against a borrowed floor.
 | unit | s0 | s1 | s2 | s3 | s4 | mean | SD |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | phone | 29.60 | 29.61 | 29.59 | 29.49 | 29.52 | 29.562 | 0.054 |
+| character | 28.85 | 29.05 | 28.68 | 28.85 | 28.94 | 28.875 | 0.136 |
 | subword | 28.20 | 27.96 | 27.99 | 28.11 | 28.22 | 28.096 | 0.118 |
 | sphnx-200 | 29.04 | 29.06 | 29.07 | 29.08 | 29.06 | 29.065 | 0.015 |
 | sphnx-2000 | 28.82 | 28.76 | 29.24 | 29.33 | 28.76 | 28.982 | 0.279 |
@@ -383,14 +390,20 @@ Row labels are abbreviated: `subword` is subword-BPE, `sphnx-k` subwordphnx-BPE 
 vocabulary k, `wBPE-k` word-BPE at k merges and `wphn-k` wordphn-BPE at k merges, as
 in the comparison tables below.
 
-**The floor is architecture-independent over eleven of the fifteen units, and not
-beyond them.** Those eleven run from 0.015 to 0.118 across vocabularies from 41 to
-63,002 tokens and both batch configurations, so about **0.1 bits/s is the floor for a
-difference** between two of them, `sqrt(sa^2 + sb^2)`. That range is eightfold rather
-than the threefold it read before subwordphnx-BPE-200 was taken to five runs, but the
-new extreme is at the quiet end: 0.015 over a range of 0.042, the tightest unit in the
-project, which only makes differences involving it cheaper to establish, so 0.1 stays a
-conservative floor. The other four are worse by a factor of two to six:
+**The floor is architecture-independent over twelve of the sixteen units, and not
+beyond them.** Those twelve run from 0.015 to 0.136 across vocabularies from 29 to
+63,002 tokens and both batch configurations. About **0.1 bits/s is the floor for a
+typical difference** between two of them, `sqrt(sa^2 + sb^2)`, but **0.1 is no longer
+the worst case inside the band**: character's 0.136 against subword-BPE's 0.118 gives
+0.180, so a pair drawn from the quiet units can need nearly twice the nominal floor.
+That range is now ninefold rather than the threefold it read before subwordphnx-BPE-200
+was taken to five runs. Until character it had only widened at the quiet end -- 0.015
+over a range of 0.042, the tightest unit in the project, which only makes differences
+involving it cheaper to establish -- and that is what made 0.1 conservative. Character
+widened it at the other end instead, by a smaller margin but in the direction that
+costs, which is why the comparisons in "Character" are quoted against each pair's own
+floor rather than against 0.1. The other four are worse still, by a factor of two to
+six:
 subwordphnx-BPE-5000 at 0.157, wordphn-BPE-1000 and wordphn-BPE-5000 at 0.235 each and
 subwordphnx-BPE-2000 at **0.279**, with ranges of 0.340, 0.525, 0.569 and 0.573 bits/s.
 A difference involving one of them must clear about 0.16 to 0.28, and a difference
@@ -1290,6 +1303,74 @@ floor and so within noise. Nothing else in either stage's ordering changes, and 
 flip is between two units whose n-gram cells are 0.08 apart, so it is a reminder of how
 little separates the middle of the ranking rather than a result in its own right --
 which the seeds have since made the stronger reading of the two.
+
+## Character
+
+The spelling-side atom: a word's letters, one token each, over a fixed 27-symbol
+inventory. Trained 2026-10-26, five seeds from the start, so no verdict here was ever
+written against a borrowed floor. OPT-20M only; there is no n-gram sweep for this unit,
+so its two n-gram cells in "Headline results" read `n/a`, as subword-BPE's do.
+
+**Word boundaries are not transmitted.** There is no space token, so the stream is each
+word's letters run together. This is what every other sub-word unit does -- phone,
+subword-BPE and the four subwordphnx-BPE sizes all decline to say where words divide --
+and it is what keeps character comparable with them. A space would have made character
+the only unit charged for the boundary. The consequence is that the character stream
+does not determine the word sequence: `the rapist` and `therapist` encode identically.
+
+### Bit rate
+
+| | seed 0 | mean of 5 | SD | range |
+|---|---:|---:|---:|---:|
+| character | 28.85 | 28.875 | 0.136 | 0.371 |
+
+Speaker-level bootstrap on the canonical run: 28.85 [28.00, 29.71]. As everywhere else
+in this document, that marginal interval is far wider than the differences being
+compared, so the paired comparisons below are the ones to read; see "Uncertainty".
+
+Because character reads the `words` tier, its denominator is **bit-identical** to
+`word`, `subword-BPE` and the three `word-BPE` units -- the same 15,845.690 dev-clean
+seconds. The spelling side is exactly paired end to end, with no caveat about differing
+speech time, in the same way `wordphn` is paired against `word`.
+
+### Against the other units
+
+Character is the second-worst of the sixteen, ahead only of phone. Clear results, as
+multiples of each pair's own floor:
+
+| against | gap | gap/floor |
+|---|---:|---:|
+| phone | -0.687 | 4.7 |
+| syllable | +0.465 | 3.0 |
+| wordphn-BPE-200 | +0.607 | 3.4 |
+| word-BPE-1000 | +0.760 | 5.1 |
+| subword-BPE | +0.779 | 4.3 |
+| wordphn | +0.809 | 5.2 |
+| subwordphnx-BPE-50000 | +0.841 | 5.6 |
+| word-BPE-200 | +1.027 | 6.8 |
+| word | +1.392 | 9.8 |
+
+A positive gap means character costs that many more bits/s. It is **unseparated from
+five units**: subwordphnx-BPE at 200, 2000 and 5000 (1.4x, 0.3x and 1.0x their floors)
+and wordphn-BPE at 1000 and 5000 (0.3x and 1.5x), the last four of those involving one
+of the project's noisy units. Against word-BPE-5000 it is marginal at 2.3x.
+
+**The spelling/realisation gap survives at the atomic level.** Character beats phone by
+0.687 bits/s at 4.7x the floor, the same direction as "spelling a word out is cheaper
+than pronouncing it" one level up, where `word` beats `wordphn` by 0.58 on means. That
+is the cleaner of the two comparisons in one respect: neither character nor phone has a
+frequency threshold or a spell-out, so two of the mechanisms that separate `word` from
+`wordphn` are simply absent here. It is dirtier in another, and the caveat matters:
+the two atoms are not the same size. Character has 27 symbols against phone's 39 and a
+stream 21% longer (40.9M against 33.7M tokens over 960h), so inventory size and stream
+length move together with the identity change and cannot be told apart from it. The
+result says the spelling atom is cheaper, not why.
+
+**Chunking the atoms still pays.** subword-BPE is character's own pieces merged, and it
+costs 0.779 bits/s less at 4.3x the floor -- the same lesson the subwordphnx-BPE sweep
+teaches on the realisation side, where every vocabulary above 200 beats phone. Nothing
+here contradicts the project's standing finding that merging *words* into collocations
+buys nothing: that is a different operation at a different scale.
 
 ## Phone
 

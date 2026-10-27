@@ -110,6 +110,61 @@ class ArpabetTokenizer(PreTrainedTokenizerFast):
         )
 
 
+class CharacterTokenizer(PreTrainedTokenizerFast):
+    """The spelling-side counterpart of `ArpabetTokenizer`: a `words`-tier span's
+    letters, one token each, over the fixed 27-symbol `CHARACTERS` inventory.
+
+    **Word boundaries are not transmitted.** There is no space token, so the stream is
+    each word's letters run together, exactly as `phone` runs each word's phones
+    together and as `subword-BPE`'s word-confined pieces do: none of the three says
+    where the words divide. That is what keeps this unit comparable with the other
+    sub-word ones. A space would make character the only unit in the project charged
+    for the word boundary, which would flatter every unit it is compared against.
+
+    **Nothing can go out of vocabulary.** The `words` tier matches `^[a-z\']+$`
+    (ngram/librispeech_stats.md's cleanliness check, verified on both 960h and
+    dev-clean), so `CHARACTERS` covers every spelling by construction. Like `phone`,
+    this unit therefore takes no min-count threshold, no spell-out backoff and no
+    random augmentation -- the three mechanisms the word-sized units need. Unknown
+    input is raised rather than mapped to an `<unk>`, so a tier that stopped being
+    clean would fail loudly instead of scoring cheap.
+    """
+
+    def __init__(self):
+        vocab = {t: i for i, t in enumerate(["<bos>", "<pad>", *CHARACTERS])}
+        backend = Tokenizer(WordLevel(vocab=vocab))
+        backend.pre_tokenizer = WhitespaceSplit()
+        super().__init__(
+            tokenizer_object=backend,
+            bos_token="<bos>",
+            pad_token="<pad>",
+            unk_token=None,
+            eos_token=None,
+            add_bos_token=True,
+            add_eos_token=False,
+        )
+
+    def _encode_plus(self, text, text_pair=None, is_split_into_words=False, **kwargs):
+        """Flatten words to their characters, rejecting anything outside CHARACTERS."""
+
+        def transform(seq):
+            words = seq if is_split_into_words else seq.split()
+            chars = [c for word in words for c in word]
+            unknown = sorted(
+                {c for c in chars if self._tokenizer.token_to_id(c) is None}
+            )
+            if unknown:
+                raise ValueError(
+                    f"Unknown character(s): {', '.join(map(repr, unknown))}"
+                )
+            return chars if is_split_into_words else " ".join(chars)
+
+        text = _map_sequences(text, is_split_into_words, transform)
+        return super()._encode_plus(
+            text, text_pair=text_pair, is_split_into_words=is_split_into_words, **kwargs
+        )
+
+
 class SubwordBpeTokenizer(PreTrainedTokenizerFast):
     """Standard subword BPE: genuine sub-word merging via HuggingFace `tokenizers`' own
     `BpeTrainer`, distinct from `ngram/bpe.py`'s word-level collocation-merging "BPE" (a

@@ -167,6 +167,17 @@ python llm/phone_prepare_mmap.py
 python llm/phone_train.py
 ```
 
+### Character
+
+The spelling-side atom, letters over a fixed 27-symbol inventory. No vocabulary is
+built and no augmentation applied: the inventory is closed, so there is nothing to
+threshold and nothing to spell out.
+
+```bash
+python llm/character_prepare_mmap.py
+python llm/character_train.py
+```
+
 ### Syllable
 
 ```bash
@@ -321,7 +332,7 @@ against the full dev-clean set; writes `llm/eval_bitrate.md`.
 
 ## Seed variance
 
-Four extra seeds per unit, in seven batches, oldest first below, so all fifteen units
+Four extra seeds per unit, in eight batches, oldest first below, so all sixteen units
 have five runs each. `--seed` is a permanent flag on every `<unit>_train.py`
 (default 0, the canonical value), defined once in `llm/train_args.py` alongside `--tag`,
 `--lr-max`, `--epochs` and `--overwrite`; it seeds torch, numpy and python, so it varies
@@ -460,6 +471,20 @@ top level of `llm/per_utterance/`, so a stale dump put in a subdirectory is stil
 ignored rather than mixed with current ones. The pre-fix figures quoted in `results.md`,
 "Seed variance", can no longer be regenerated without retraining those runs.
 
+`character` was added on 2026-10-26 and run at five seeds from the start, about eight
+hours sequential, so its canonical run and its floor arrived together:
+
+```bash
+python llm/character_prepare_mmap.py
+python llm/character_train.py
+for s in 1 2 3 4; do
+  python llm/character_train.py --seed $s --tag seed$s
+done
+python llm/eval_bitrate.py --units character character-seed1 character-seed2 \
+  character-seed3 character-seed4
+python utils/bootstrap.py --seeds
+```
+
 ## Worked example
 
 One utterance as every unit tokenises it, for a running example or a figure. Reads the
@@ -479,7 +504,7 @@ The default, `1272-128104-0000` ("mister quilter is the apostle of the middle cl
 words exercise every mechanism at once: "quilter" occurs nowhere in the 960h training
 transcripts, so the `~`-marked spell-out is the real backoff path rather than a
 contrived one, and "the" is realised `DH-IY` before "apostle" and `DH-AH` before
-"middle", which is the realisation-identity split `wordphn` is built on. All fifteen
+"middle", which is the realisation-identity split `wordphn` is built on. All sixteen
 units take the unit list and their tokenisers from `llm/eval_bitrate.py`'s `BASE`, so
 what prints here is the tokenisation each unit was scored with.
 

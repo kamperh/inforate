@@ -58,6 +58,7 @@ DEFAULT_UTTERANCE = "1272-128104-0000"
 # treble the width of the one line that exists to show no grouping at all.
 DISPLAY_ORDER = (
     "phone",
+    "character",
     "syllable",
     "word",
     "wordphn",

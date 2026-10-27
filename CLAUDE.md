@@ -71,8 +71,9 @@ detailed experiment plan is drafted separately from this file.
   the scaffold stays reference material, the actual code to run lives here. Shared
   modules (`data_common.py`, `tokenisers.py`, `data.py`, `trainer.py`,
   `train_args.py` for the flags every unit shares) plus one
-  `<unit>_prepare_mmap.py`/`<unit>_train.py` pair per unit: `phone`, `subword_bpe`,
-  `subwordphnx_bpe`, `syllable`, `word`, `word_bpe`, `wordphn` and `wordphn_bpe`, with
+  `<unit>_prepare_mmap.py`/`<unit>_train.py` pair per unit: `phone`, `character`,
+  `subword_bpe`, `subwordphnx_bpe`, `syllable`, `word`, `word_bpe`, `wordphn` and
+  `wordphn_bpe`, with
   the three BPE-merge counts coming from one `--n-merges` flag, and subwordphnx-BPE's
   four vocabulary sizes from one `--vocab-size` flag, rather than separate
   scripts. `word_sample.py` and `subword_bpe_sample.py` continue a word prompt from a
@@ -111,7 +112,7 @@ detailed experiment plan is drafted separately from this file.
   by side; they are nested, so 200's merges are the first 200 of 1000's and those the
   first 1000 of 5000's. `--verify` re-learns along the n-gram path and diffs, which is
   the check `design.md`, "Open issues", records as never having been run for this unit.
-  `inspect_example.py`: shows one utterance as all fifteen units tokenise it, reading
+  `inspect_example.py`: shows one utterance as all sixteen units tokenise it, reading
   the saved tokenisers and loading no model, with the unit list and each unit's
   tokeniser taken from `llm/eval_bitrate.py`'s own `BASE` so the two cannot diverge.
   `--words N` truncates every unit at the Nth word's end time, so a short prefix stays
@@ -209,8 +210,8 @@ cross-estimator comparison, 200 and 5000 on 2026-10-12 to put a deterministic
 estimator under the vocabulary sweep the seeds had left unsettled, and 50000 on
 2026-10-14 to find where that sweep ends.
 
-`llm/` is complete: all fifteen units trained and scored -- phone, subword-bpe,
-subwordphnx-bpe at 200/2000/5000/50000, word, syllable, word-BPE at
+`llm/` is complete: all sixteen units trained and scored -- phone, character,
+subword-bpe, subwordphnx-bpe at 200/2000/5000/50000, word, syllable, word-BPE at
 200/1000/5000, wordphn, and wordphn-BPE at 200/1000/5000 -- at the canonical setup of
 20 epochs and `lr_max=1e-3`, which the learning-rate and epoch sweeps confirmed is
 best or tied-best for every unit, so the "one setup for every level" goal was met.
@@ -222,13 +223,15 @@ Numbers live in `results.md` and `llm/eval_bitrate.md`.
 `qwen/` is complete: Qwen2.5-1.5B and 3B scored on dev-clean.
 
 Bit rates carry 95% confidence intervals (`utils/bootstrap.py`) and, for `llm/`, a
-seed noise floor from **five seeds for every one of the fifteen units**, the last of
-them on 2026-10-14; an n-gram fit is deterministic, so
+seed noise floor from **five seeds for every one of the sixteen units**, the last of
+them on 2026-10-26; an n-gram fit is deterministic, so
 there the bootstrap interval is the whole error budget. Training variance is about 0.1
-bits/s for a difference between independently trained units, and **the floor is not
-universal**: SDs run 0.015 to 0.118 over eleven of the fifteen units, across
-vocabularies from 41 to 63,002 tokens, but subwordphnx-BPE-5000, wordphn-BPE-1000,
-wordphn-BPE-5000 and subwordphnx-BPE-2000 come in at 0.157, 0.235, 0.235 and 0.279. A
+bits/s for a *typical* difference between independently trained units, and **the floor
+is not universal**: SDs run 0.015 to 0.136 over twelve of the sixteen units, across
+vocabularies from 29 to 63,002 tokens -- and 0.1 is not even the worst case inside that
+band, since character's 0.136 against subword-bpe's 0.118 gives 0.180. Beyond it,
+subwordphnx-BPE-5000, wordphn-BPE-1000, wordphn-BPE-5000 and subwordphnx-BPE-2000 come
+in at 0.157, 0.235, 0.235 and 0.279. A
 new unit's floor has to be measured rather than inherited, and subwordphnx-BPE-2000 is
 the project's sharpest demonstration of it: written up from one run against a borrowed
 0.109, it measured 0.279 and took most of its own subsection's verdicts down with it.
@@ -247,7 +250,7 @@ vocabularies measure 0.015, 0.279, 0.157 and 0.062, so the project's quietest un
 its noisiest differ only in vocabulary size, and the floor is not monotone in it.
 Of the 21 pairwise comparisons among the
 original seven units, sixteen
-are clear; the full set over fifteen units is 105, with the wordphn family's own in
+are clear; the full set over sixteen units is 120, with the wordphn family's own in
 `results.md`, "Wordphn". Over the four paper units the defensible ranking is
 
     word < word-BPE-200 < word-BPE-1000 < {syllable, word-BPE-5000} < phone
@@ -307,9 +310,9 @@ spell-out and not realisation-identity, under n-grams at least. See `results.md`
 encodes to a whole-unit id, because every letter is itself a LibriSpeech word, so
 emitting bare pieces produced no `~`-marked fallback tokens at all for word and
 word-BPE and train/test-inconsistent hybrids for syllable; that was the state until
-2026-09-21 and every augmented unit was retrained after the fix. Nine of the fifteen
-units augment; phone, subword-bpe and the four subwordphnx units have nothing to
-spell out. See `design.md`, "Random augmentation".
+2026-09-21 and every augmented unit was retrained after the fix. Nine of the sixteen
+units augment; phone, character, subword-bpe and the four subwordphnx units have
+nothing to spell out. See `design.md`, "Random augmentation".
 
 **Collocations buy nothing over plain words**, under either estimator, and both
 stages agree more merges is worse. Two conventions keep that honest and must not be

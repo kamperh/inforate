@@ -35,7 +35,7 @@ The third motivation is for the zero-resource speech processing community (which
 
 After defining information rate (measured in bits-per-second, bps) below, I first show that all units in fact have the same bitrate when we have a perfect model. This is because different tokenisations of the same input are just different encodings of the same underlying events and should therefore have the same probabilities. But this is only true with a perfect model -- something we never have. I therefore ask the more specific question of what the different information rates look like when using an actual model to estimate the probabilities. I consider two classes of models: class $n$-gram language models and modern transformer-based neural language models.
 
-I train $n$-gram and transformer models on different tokenisations of the same data. Apart from phones, syllables and words, I also apply byte pair encoding (BPE) () at the word-token level, generating multi-word units, like DH-AH-S-T-EH-R-K-EY-S (the staircase). A range of sanity checks at intermediate levels are also performed (like subword BPE merging phones). For the main comparison, all units have a one-to-one correspondents with their constituent phones, e.g. "two" and "too" are both represented as "T UW". This makes bitrates directly comparable across units since exactly the same content is being transmitted. But other sanity checks are also performed, e.g. operating at the character level.
+I train $n$-gram and transformer models on different tokenisations of the same data. Apart from phones, syllables and words, I also apply byte pair encoding (BPE) () at the word-token level, generating multi-word units, like DH-AH-S-T-EH-R-K-EY-S (the staircase). A range of sanity checks at intermediate levels are also performed (like subword BPE merging phones). For the main comparison, all units have a one-to-one correspondents with their constituent phones, e.g. "two" and "too" are both represented as "T-UW". This makes bitrates directly comparable across units since exactly the same content is being transmitted. But other sanity checks are also performed, e.g. operating at the character level.
 
 On the data used here, the best bitrates are achieved with a 20M-parameter transformer operating on words (?? bps). With $n$-grams, adding a small number of word-BPE merges improves results over isolated words. For both model classes, if too many word-merges are added, bitrate gets worse. Under a constrained modelling budget, it therefore seems that a balance needs to be struck between having a small set of shorter-duration units (e.g. phones; best bit rate ??? bps with transformer) vs having a much larger set of longer units (e.g. phrase-like multi-word combinations; ??? bps with transformer when adding 5000 word merges).
 
@@ -164,9 +164,9 @@ I use a decoder-only autoregressive transformer language models based on a modif
 
 ## Data and units
 
-I perform experiments on the multi-speaker English LibriSpeech corpus of read audiobooks. Models are trained on forced alignments of the 960h training set and evaluated on dev-clean (4.5 hours of speech). The phone-level forced alignments uses an ARPABet set without stress markers, giving a set of 39 phones. The goal of this paper is to compare bitrates of different tokenisations of this same data. I compare phones, syllables, words, multi-word combinations obtained from BPE at the word-token level, as well as some intermediate units.
+I perform experiments on the multi-speaker English LibriSpeech corpus of read audiobooks. Models are trained on forced alignments of the 960h training set and evaluated on dev-clean (4.5 hours of speech). The phone-level forced alignments (McAuliffe et al. 2017) uses an ARPABet set without stress markers, giving a set of 39 phones. The goal of this paper is to compare bitrates of different tokenisations of this same data. I compare phones, syllables, words, multi-word combinations obtained from BPE at the word-token level, as well as some intermediate units.
 
-To obtain syllable units from the phone forced alignments, a rule-based method is used (Gorman 2013), as was also done in (Visser et al. 2026). Word boundaries are not taken into account, i.e.\ syllables can span across words. As noted in the introduction, words are defined here based on phonetic realisations, e.g.\ e.g. "two" and "too" are both represented as the word type "T UW". I do this because otherwise it isn't possible to directly recover the exact phone sequence from the word tokenisation, breaking the one-to-one correspondence needed for proper bitrate comparisons. The number of tokens and types for phones, syllabels and words in the training data are shown in the table below.
+To obtain syllable units from the phone-level forced alignments, a rule-based method is used (Gorman 2013), as was also done in (Visser et al. 2026). Word boundaries are not taken into account, i.e.\ syllables can span words. As noted in the introduction, words are defined here based on phonetic realisations, e.g.\ e.g. "two" and "too" are both represented as the word type "T-UW". I do this because otherwise it isn't possible to directly recover the exact phone sequence from the word tokenisation, breaking the one-to-one correspondence needed for proper bitrate comparisons. The number of tokens and types for phones, syllables and words in the training data are shown in the table below.
 
 | Units | Tokens | Types | Non-singleton types |
 |---|---:|---:|---:|
@@ -178,66 +178,51 @@ To obtain syllable units from the phone forced alignments, a rule-based method i
 librispeech_stats.md
 ```
 
+For the word transformer models, only types occurring more than once in the training data are used in the output vocabulary, giving an output layer of 56k types (last column and row of table). Singletons are treated as unseen (and are therefore spelled out as described above).
 
-
-**Phones.** Phone-level forced aligments for the data were produced using Montreal Forced Aligner (McAuliffe et al. 2017) using an ARPABet phone set. Stress markers are removed, leaving a set of 39 phones.
-
-**Syllables.** As in (Visser et al. 2026), a syllable tokenisation is obtained from the phone sequences using a rule-based method (Gorman 2013). Word boundaries are not taken into account, i.e.\ syllables can span over words. When encountering an out-of-vocabulary syllable, the model backs off to a "spelled out" version of the syllable, where "spelling" here means using the constituent phones. (This spelling model is used in both the $n$-gram and neural models.)
-
-**Words.** For the word case, out-of-vocabulary words are spelled out as characters. For the neural model, only words that occur at least twice in the training data are used in the output vocabulary, resulting in 58k classes. Words occurring only once or not at all in the training data is therefore spelled out.
-
-**Word-BPE.** Maybe the most efficient units are something larger than words, like phrases or common-multi-word combinations. To test this, I use BPE, but not the standard BPE where subwords are built up by merging commonly co-occurring characters (Gage 1994; Sennrich et al. 2016). (Below I do do a sanity check using standard subword-BPE.) Rather, here, multi-word combinations are found by merging at the word-token level. New types like `of the` are therefore added to the vocabulary. I again constrain the starting vocabulary to words occurring at least twice (58k types), and then add the new merged word types. I consider 200, 1000 and 5000 merges. Unseen words are spelled out as characters, as with the plain word model.
-
-The most common merges word the word-BPE units are the following:
-
-- 'of' + 'the'  ->  'of the'
-- 'in' + 'the'  ->  'in the'
-- 'to' + 'the'  ->  'to the'
-- 'and' + 'the'  ->  'and the'
-- 'on' + 'the'  ->  'on the'
-- 'it' + 'was'  ->  'it was'
-- 'to' + 'be'  ->  'to be'
-
-For the 5000-merge case, the longest 15 merges in terms of number of tokens are:
-
-- 'on the other side of the'
-- 'on the part of the'
-- 'in the midst of the'
-- 'in the middle of the'
-- 'at the foot of the'
-- 'at the end of the'
-- 'and at the same time'
-- 'with an air of'
-- 'what is the matter'
-- 'what do you think'
-- 'what do you mean'
-- 'up and down the'
-- 'to go to the'
-- 'the rest of the'
-- 'that there was no'
-
-- Add vocabulary sizes to paper (with and without min-count)
+Maybe the most efficient units are something larger than words, like phrases or common-multi-word combinations. To test this, I use BPE, but not the standard BPE where subwords are built up by merging commonly co-occurring characters (Gage 1994; Sennrich et al. 2016). (I do include sanity checks using subword BPE below.) Rather, here, multi-word combinations are found by merging at the word-token level. New types like AH-V-DH-AH (of the) are therefore added to the vocabulary. I again constrain the starting vocabulary to words occurring at least twice (58k types), and then add the new merged word types. I consider 200, 1,000 and 5,000 merges. For the transformer models, this increases the output vocabulary by the corresponding merge count. Unseen words are spelled out as phones, as with the normal word model. When doing 5,000 merges, the longest unit is AA-N DH-IY AH-DH-ER S-AY-D AH-V DH-AH (on the other side of the).
 
 
 
 ## Results
 
-The goal is to see what unit granularity has the best information rate under a constrained modelling budget. We look at phones, syllables, words, and different word-BPE tokenisations (at 200, 1000 and 5000 merges). This gives a total of six units for comparison.
+### Main results
 
-**Notes on development experiments on single units.** Bitrates for syllable units as the amount of data is varied:
+The goal of this paper is to see which unit has the best information rate under a constrained modelling budget. For the main comparison, we look at phones, syllables, words and different word-BPE tokenisations (at 200, 1000 and 5000 merges). This gives a total of six units for comparison. We consider two model classes: third-order $n$-gram language model and a transformer language model. The results for both are given in the figure below. Error bars for the transformer model are standard deviations across five seeds.
 
-| fraction | order 1 | order 2 | order 3 | order 4 | order 5 | OPT-20M |
-|---|---:|---:|---:|---:|---:|---:|
-| 25% | 46.22 | 35.24 | 32.98 | 33.06 | 33.25 | - |
-| 50% | 46.21 | 34.91 | 32.28 | 32.30 | 32.51 | - |
-| 75% | 46.20 | 34.78 | 31.94 | 31.91 | 32.13 | - |
-| 100% | 46.20 | 34.68 | 31.68 | 31.61 | 31.82 | 28.41 |
+![Bitrates for different linguistic units per model class. The dark bar gives the best performance per model class. The error bars for the transformer models are bitrate standard deviations over five seeds.](docs/fig/unit_bars_main/unit_bars.pdf){width=85%}
 
-This trend was the same for all models, except phones, for which a 5-gram was the best (38.45 for 4-gram vs 34.93 bps for 5-gram when using 100% of the data). But I wanted a fixed order for all the models, so I picked trigrams. (And even if I did use a 5-gram just for phones and a 3-gram for all the others, the conclusions would still be the same. The problem with this is that would allow for a changing budget, which violates our research question. In the Appendix I give the order 5 results for all the models.)
+Under both the $n$-gram and transformer bitrate measurements, we see that a unit larger than syllables but smaller than long multi-word bombinations (word-BPE 1,000 or 5,000) gives the lowest bitrates. For the $n$-gram model, this is the word-BPE 200 tokenisation, while for the transfomer, this is word tokenisation. The latter also achieves the best overall bitrate of 28.07 bps.
 
-**Main results: comparison between units.**
+Although the differences for the $n$-gram models are small, bootstrap confidence estimates (Bisani and Ney) reveal that all pair-wise differences are signigicant at the 99% level, except for the word vs the word-BPE 1,000 models (which makes sense given that their results are both 31.05 bps).^[I use $B = 10,000$ bootstrap samples at the speaker level, i.e.\ 40 speakers are sampled with replacement with the corresponding utterances forming the bootstrap sample.] Pair-wise differences between transformer models are statistically significant in all cases.
 
-![Bitrates for the different units per model type. The dark bar gives the best performance per model type. The error bars are runs across multiple seeds.](docs/fig/unit_bars.pdf){width=85%}
+
+## Additional experiments and sanity checks
+
+My goal was to compare the information rates of the linguistic units above, but other (intermediate) units and results are useful for supporting the results and their interpretation.
+
+The first of these is using the more standard form of BPE, where the smallest units (normally characters but here I use phones) are merged to form subword units. Here I apply BPE to the phone units to obtain new types like AH-N (an) and DH-AH (the). I merge to get a vocabulary of 2,000 and disallow merges across word boundaries (as is standard with BPE). The hypothesis would be that the bitrate of this tokenisation would lie somewhere between phones and words (maybe close to syllables), and this is indeed the case: 31.59 bps under the $n$-gram and 28.82$\pm$0.279 bps under the transformer. Presumably, with this approach, we could get operating points anywhere between phones and words by adjusting the vocabulary accordingly.^[With merges close to the word vocabulary (56k), this phonetic subword-BPE tokenisation should match the results with words.]
+
+All of the main results above are performed on phones as the smallest unit. As a sanity check (or maybe an alternative that walks away from speech-based linguistic units), we could have also done the analysis on characters, i.e. words are represented in their orthographic form so that `two` and `too` would now be separate entries in the vocabulary. Results is given in the figure below using transformers to measure bitrate for characters, subword-BPE-merged characters (2,000 merges), ortographic words and larger units where word tokens are merged with BPE (200, 1,000 and 5,000 merges). Bitrates are lower than those in the figure above, but these are not directly comparable: phones and characters do not have a one-to-one correspondence. Nevertheless, we see the same trend as above, with word units giving significantly lower bitrates than the other units.
+
+![Bitrates for different character-based units using transformers for bitrate calculation.](docs/fig/unit_bars_char/unit_bars.pdf){width=85%}
+
+
+
+Can I make sure the results are correct and makes sense?
+
+- Subword-BPE
+- Character-level models
+- Qwen
+
+
+## Discussion
+
+
+**Discussion.** Not words: someting in-between. Several things should still be done.
+
+
+## Limitations and future work
 
 
 
@@ -305,6 +290,8 @@ Other languages, especially languages where the definition of a word is differen
 
 ## Limitations
 
+Other languages
+
 In some of the derivations I assmed a one-to-one mapping, for instance, from words back to phones (and vice versa), but this is not exactly true: without knowing the boundaries, it is difficult to get from phones to words. Another problem is in backing off to the spelling model in different ways; with the word models we back off to spelling via characters, while with the syllable models, the spelling model is via the constituent phones.
 
 For the LLMs, I matched parameter size on the bodies of the models, not the output vocabularies. This means that the word-based models in effect has many more parameters than the other models. But I feel okay about this, since I matched the vocabularies of the word-BPE models, so they are at least all the same size. I can also not see how you would make the parameters actually line up e.g. between phone and word models.
@@ -363,6 +350,8 @@ AI policy:
 - Each of us our own policy:
     
     - My personal AI policy
+
+I wrote the review for this PhD in its entirety, and then used Claude to fix spelling and grammar mistakes and highlight unclear sentences. I then reviewed the entire document again.
 
 
 ## Acknowledgements
@@ -470,6 +459,7 @@ Again this matches my definition if we make a second-order modelling assumption 
 I think if you are comparing things, the important thing is just to calculate bitrate consistently. You cannot compare bitrates calculated the ZeroSpeech way to bitrates calculated the Coupé way.
 
 
+
 ## Titles
 
 - The most efficient units for encoding speech content
@@ -477,3 +467,62 @@ I think if you are comparing things, the important thing is just to calculate bi
 - On the information rate of different speech units
 - On the information rate of different units
 - On the information rate of different spoken units
+
+
+
+## More details on units
+
+**Phones.** Phone-level forced aligments for the data were produced using Montreal Forced Aligner (McAuliffe et al. 2017) using an ARPABet phone set. Stress markers are removed, leaving a set of 39 phones.
+
+**Syllables.** As in (Visser et al. 2026), a syllable tokenisation is obtained from the phone sequences using a rule-based method (Gorman 2013). Word boundaries are not taken into account, i.e.\ syllables can span over words. When encountering an out-of-vocabulary syllable, the model backs off to a "spelled out" version of the syllable, where "spelling" here means using the constituent phones. (This spelling model is used in both the $n$-gram and neural models.)
+
+**Words.** For the word case, out-of-vocabulary words are spelled out as characters. For the neural model, only words that occur at least twice in the training data are used in the output vocabulary, resulting in 58k classes. Words occurring only once or not at all in the training data is therefore spelled out.
+
+**Word-BPE.** Maybe the most efficient units are something larger than words, like phrases or common-multi-word combinations. To test this, I use BPE, but not the standard BPE where subwords are built up by merging commonly co-occurring characters (Gage 1994; Sennrich et al. 2016). (Below I do do a sanity check using standard subword-BPE.) Rather, here, multi-word combinations are found by merging at the word-token level. New types like `of the` are therefore added to the vocabulary. I again constrain the starting vocabulary to words occurring at least twice (58k types), and then add the new merged word types. I consider 200, 1000 and 5000 merges. Unseen words are spelled out as characters, as with the plain word model.
+
+
+
+## Word-BPE
+
+The most common merges word the word-BPE units are the following:
+
+- 'of' + 'the'  ->  'of the'
+- 'in' + 'the'  ->  'in the'
+- 'to' + 'the'  ->  'to the'
+- 'and' + 'the'  ->  'and the'
+- 'on' + 'the'  ->  'on the'
+- 'it' + 'was'  ->  'it was'
+- 'to' + 'be'  ->  'to be'
+
+For the 5000-merge case, the longest 15 merges in terms of number of tokens are:
+
+- 'on the other side of the'
+- 'on the part of the'
+- 'in the midst of the'
+- 'in the middle of the'
+- 'at the foot of the'
+- 'at the end of the'
+- 'and at the same time'
+- 'with an air of'
+- 'what is the matter'
+- 'what do you think'
+- 'what do you mean'
+- 'up and down the'
+- 'to go to the'
+- 'the rest of the'
+- 'that there was no'
+
+
+
+### Notes on development experiments on single units
+
+Bitrates for syllable units as the amount of data is varied:
+
+| fraction | order 1 | order 2 | order 3 | order 4 | order 5 | OPT-20M |
+|---|---:|---:|---:|---:|---:|---:|
+| 25% | 46.22 | 35.24 | 32.98 | 33.06 | 33.25 | - |
+| 50% | 46.21 | 34.91 | 32.28 | 32.30 | 32.51 | - |
+| 75% | 46.20 | 34.78 | 31.94 | 31.91 | 32.13 | - |
+| 100% | 46.20 | 34.68 | 31.68 | 31.61 | 31.82 | 28.41 |
+
+This trend was the same for all models, except phones, for which a 5-gram was the best (38.45 for 4-gram vs 34.93 bps for 5-gram when using 100% of the data). But I wanted a fixed order for all the models, so I picked trigrams. (And even if I did use a 5-gram just for phones and a 3-gram for all the others, the conclusions would still be the same. The problem with this is that would allow for a changing budget, which violates our research question. In the Appendix I give the order 5 results for all the models.)

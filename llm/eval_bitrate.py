@@ -34,6 +34,7 @@ from data import TokenizedUnitsUtteranceDataset
 from data_common import DATA_ROOT, DEV_SPLIT, WORDPHN_TIER, read_tier
 from tokenisers import (
     ArpabetTokenizer,
+    CharacterTokenizer,
     SubwordBpeTokenizer,
     SubwordPhoneXBpeTokenizer,
     SyllableTokenizer,
@@ -73,6 +74,9 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 # forces word_train.py's batch_size down, at training time.
 BASE = {
     "phone": {"tier_name": "phones", "tokenizer": ArpabetTokenizer},
+    # The spelling-side counterpart of phone, and like it a fixed inventory with
+    # no threshold and no spell-out, so DEFAULT_BATCH_SIZE applies (29 tokens).
+    "character": {"tier_name": "words", "tokenizer": CharacterTokenizer},
     "subword-bpe": {
         "tier_name": "words",
         "tokenizer": lambda: SubwordBpeTokenizer(
@@ -175,6 +179,13 @@ UNITS = {
         / "opt125m-subword-bpe-librispeech"
         / "opt125m-subword-bpe-librispeech.pt",
         # Canonical run: lr_max=1e-3, 3300 steps.
+    },
+    "character": {
+        **BASE["character"],
+        "checkpoint": CHECKPOINT_DIR
+        / "opt125m-character-librispeech"
+        / "opt125m-character-librispeech.pt",
+        # Canonical run: lr_max=1e-3, 20 epochs, seed 0. Added 2026-10-26.
     },
     # Canonical runs, lr_max=1e-3, at four vocabulary sizes; see results.md,
     # "Subwordphn-BPE".
@@ -284,6 +295,7 @@ UNITS = {
             ("subwordphnx-bpe-200", "subwordphnx-bpe200", (1, 2, 3, 4)),
             ("subwordphnx-bpe-5000", "subwordphnx-bpe5000", (1, 2, 3, 4)),
             ("subwordphnx-bpe-50000", "subwordphnx-bpe50000", (1, 2, 3, 4)),
+            ("character", "character", (1, 2, 3, 4)),
         )
         for seed in seeds
     },
