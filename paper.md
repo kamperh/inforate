@@ -208,46 +208,32 @@ In this figure, bitrates are lower than those in the figure above, but these are
 
 ![Bitrates for different character-based units using transformers for bitrate calculation.](docs/fig/unit_bars_char/unit_bars.pdf){width=85%}
 
-Finally, I wanted to gauge how close we are getting to the true bitrate; given the discussion in Section ??, this clearly isn't possible because we will never have the real model. Neverhtless, we can consider bitrates when training data and model size are dramatically scaled. I cannot train models of this size myself, but I can use available open-weight models. This means we are also tied to this model's units (so we cannot compare different tokenisations), but this is acceptable given that our aim now is not unit comparison. For this experiment, I use two Qwen2.5 models (Qwen Team, 2024), a 1.5B- and a 3B-parameter model. These models are trained on roughly 18T tokens of text. They use a byte-based BPE tokeniser with an output vocabulary of about 150k types. Because Qwen's training domain and punctuation is quite different from the normalised LibriSpeech text that I evaluate on, the models are conditioned on a lowercase unpunctuated primer drawn from train-clean-100, prepended to every evaluation utterance. (This lowers bitrate for both models.) With this setup, Qwen2.5-1.5B achieves a bitrate of 25.90 bps, while Qwen2.5-3B achieves 25.26 bps. These are directly comparable to the character-based result in Figure ??, where the best overall bitrate is 27.48. This shows that my models are in the right ballpark.
+Finally, I wanted to gauge how close we are getting to the true bitrate; given the discussion in Section ??, this clearly isn't possible because we will never have the real model. Neverhtless, we can consider bitrates when training data and model size are dramatically scaled. I cannot train models of this size myself, but I can use available open-weight models. This means we are also tied to this model's units (so we cannot compare different tokenisations), but this is acceptable given that our aim now is not unit comparison. For this experiment, I use two Qwen2.5 models (Qwen Team, 2024), a 1.5B- and a 3B-parameter model. These models are trained on roughly 18T tokens of text. They use a byte-based BPE tokeniser with an output vocabulary of about 150k types. Because Qwen's training domain and punctuation is quite different from the normalised LibriSpeech text that I evaluate on, the models are conditioned on a lowercase unpunctuated primer drawn from train-clean-100, prepended to every evaluation utterance. (This lowers bitrate for both models.) With this setup, Qwen2.5-1.5B achieves a bitrate of 25.90 bps, while Qwen2.5-3B achieves 25.26 bps. These are directly comparable to the character-based result in Figure ??, where the best overall bitrate is 27.48.
+
+It is therefore clear that with a substantially larger model bitrates can be even lower, but the aim of this paper was a systematic comparison of different units under the same modelling budget.^[As model size and amount of data scales, we should expect the different units to give similar bitrates.] In this light, I think the bitrates of the Qwen models serve as a reasonable sanity check on the bitrates achieved above.
+
+
 
 ## Discussion, limitations and future work
 
+The aim of this paper was to compare different linguistic units to see whether there is some optimal information rate at a specific unit granularity when measured on the same data. Results when using phones as the atomic unit suggest that words (or potentially units just slightly longer than words) gives a good trade-off between the number of types and unit size, giving better bitrates than syllables or very long multi-word combinations. These results are supported by experiments at the character level, where ortographic words (rather than unique phonetic realisations of word types) also achieve the lowest bitrates when using a 20M-parameter transformer language model.
 
-
-As model size and amount of data scales, we should expect the different units to give similar bitrates. But the point of this study was to do a comparison under the same budget, and this serves as a reasonable sanity check.
-
-
-## Discussion
-
-We are not encoding the actual "message", which probably has much fewer bits, but also not the actual speech (speaker, emotion, channel), which probably would cost way more bits.
-
-Just because encoding is more efficient, it doesn't necessarily mean generation is going to be better (it almost certainly does not). It is fine to spend a large number of bits on long sequences that occur once or twice, but if you accidentally generated these during inference in the wrong context, the penalty could be very unintelligible output.
+Taken together, the above suggests that words are more efficient in information theoretic terms than smaller or much larger units. But the concept of a "word" is itself controversial (Haspelmath 2011, 2023); the definition of a word, for instance, differs across languages. This is indeed limitation of this work, and future work should address this shortcoming by repeathing the analysis on other languages. Nevertheless, I think the results show that something larger than than phones or syllables and smaller than long multi-word combinations are most efficient (under a limited budget), and I suspect that this will also hold on other languages.
 
 
 
-## Conclusion and future work
-
-I do not claim that words are the most efficient units (especially given that the concept of what a word is is contested, and also quite language dependent). What I would claim is that the most efficient unit is something bigger than phones or syllables and smaller than long multi-word combinations.
 
 Other languages, especially languages where the definition of a word is different.
 
+The claim here seems to be that something at the word or super-word level is more efficient (under a constrained budget). But the concept of a “word” is itself controversial, and will differ across languages (all of the above was done on English). This is true, and the work should be extended to other languages. Nevertheless, I think the results show that something larger than a syllable is more efficient than units like syllables or phones, and I suspect that will hold even for other languages.
 
-
-## Limitations
-
-Other languages
-
-In some of the derivations I assmed a one-to-one mapping, for instance, from words back to phones (and vice versa), but this is not exactly true: without knowing the boundaries, it is difficult to get from phones to words. Another problem is in backing off to the spelling model in different ways; with the word models we back off to spelling via characters, while with the syllable models, the spelling model is via the constituent phones.
-
-For the LLMs, I matched parameter size on the bodies of the models, not the output vocabularies. This means that the word-based models in effect has many more parameters than the other models. But I feel okay about this, since I matched the vocabularies of the word-BPE models, so they are at least all the same size. I can also not see how you would make the parameters actually line up e.g. between phone and word models.
+I do not claim that words are the most efficient units (especially given that the concept of what a word is is contested, and also quite language dependent). What I would claim is that the most efficient unit is something bigger than phones or syllables and smaller than long multi-word combinations.
 
 Related to the point under discussion about the “message”, this work really looked at encoding efficiency purely from an information theory standpoint (under a fixed budget). The goal was to show that – from this viewpoint – some units might be better for modelling than others. But maybe it would be better to explicitly consider what humans do through a psycholinguistic lens. As one example, Oh and Schiler (2024) considered how different subword-BPE tokenisations on text influence the correlation of estimated surprisal with human processing times.
 
-The claim here seems to be that something at the word or super-word level is more efficient (under a constrained budget). But the concept of a “word” is itself controversial, and will differ across languages (all of the above was done on English). This is true, and the work should be extended to other languages. Nevertheless, I think the results show that something larger than a syllable is more efficient than units like syllables or phones, and I suspect that will hold even for other languages.
 
-I am worried that the word level model does better, given that everyone else trains BPE level models.
 
-I am really worried I missed something very dumb that will completely invalidate all of this. One thing in particular that worries me is that the word-based model outperforms a subword-BPE model, and no one uses a full word-based model for textual language models. I suspect this has to do with scale (they train on way more data). But I think my findings is good given the framing that this comparison is done *under a constrained modelling budget*.
+Apart from the limitations mentioned in the footnotes above, I note the following.
 
 
 
@@ -318,6 +304,10 @@ Virpioja et al. (2018), “Using Statistical Models of Morphology in the Search 
 Gibson et al. (2019), “How Efficiency Shapes Human Language.”
 
 Dunbar et al. (2019), "The Zero Resource Speech Challenge 2019: TTS without T"
+
+Haspelmath, M. (2011). The indeterminacy of word segmentation and the nature of morphology and syntax. Folia Linguistica, 45(1), 31–80.
+
+Haspelmath, M. (2023). Defining the word. WORD, 69(3), 283–297.
 
 
 
@@ -459,7 +449,7 @@ For the 5000-merge case, the longest 15 merges in terms of number of tokens are:
 
 
 
-### Notes on development experiments on single units
+## Notes on development experiments on single units
 
 Bitrates for syllable units as the amount of data is varied:
 
@@ -471,3 +461,13 @@ Bitrates for syllable units as the amount of data is varied:
 | 100% | 46.20 | 34.68 | 31.68 | 31.61 | 31.82 | 28.41 |
 
 This trend was the same for all models, except phones, for which a 5-gram was the best (38.45 for 4-gram vs 34.93 bps for 5-gram when using 100% of the data). But I wanted a fixed order for all the models, so I picked trigrams. (And even if I did use a 5-gram just for phones and a 3-gram for all the others, the conclusions would still be the same. The problem with this is that would allow for a changing budget, which violates our research question. In the Appendix I give the order 5 results for all the models.)
+
+
+
+## Discussion
+
+Just because encoding is more efficient, it doesn't necessarily mean generation is going to be better (it almost certainly does not). It is fine to spend a large number of bits on long sequences that occur once or twice, but if you accidentally generated these during inference in the wrong context, the penalty could be very unintelligible output.
+
+We are not encoding the actual "message", which probably has much fewer bits, but also not the actual speech (speaker, emotion, channel), which probably would cost way more bits.
+
+For the LLMs, I matched parameter size on the bodies of the models, not the output vocabularies. This means that the word-based models in effect has many more parameters than the other models. But I feel okay about this, since I matched the vocabularies of the word-BPE models, so they are at least all the same size. I can also not see how you would make the parameters actually line up e.g. between phone and word models.
