@@ -196,80 +196,25 @@ Under both the $n$-gram and transformer bitrate measurements, we see that a unit
 
 Although the differences for the $n$-gram models are small, bootstrap confidence estimates (Bisani and Ney) reveal that all pair-wise differences are signigicant at the 99% level, except for the word vs the word-BPE 1,000 models (which makes sense given that their results are both 31.05 bps).^[I use $B = 10,000$ bootstrap samples at the speaker level, i.e.\ 40 speakers are sampled with replacement with the corresponding utterances forming the bootstrap sample.] Pair-wise differences between transformer models are statistically significant in all cases.
 
-
-## Additional experiments and sanity checks
+### Additional experiments and sanity checks
 
 My goal was to compare the information rates of the linguistic units above, but other (intermediate) units and results are useful for supporting the results and their interpretation.
 
 The first of these is using the more standard form of BPE, where the smallest units (normally characters but here I use phones) are merged to form subword units. Here I apply BPE to the phone units to obtain new types like AH-N (an) and DH-AH (the). I merge to get a vocabulary of 2,000 and disallow merges across word boundaries (as is standard with BPE). The hypothesis would be that the bitrate of this tokenisation would lie somewhere between phones and words (maybe close to syllables), and this is indeed the case: 31.59 bps under the $n$-gram and 28.82$\pm$0.279 bps under the transformer. Presumably, with this approach, we could get operating points anywhere between phones and words by adjusting the vocabulary accordingly.^[With merges close to the word vocabulary (56k), this phonetic subword-BPE tokenisation should match the results with words.]
 
-All of the main results above are performed on phones as the smallest unit. As a sanity check (or maybe an alternative that walks away from speech-based linguistic units), we could have also done the analysis on characters, i.e. words are represented in their orthographic form so that `two` and `too` would now be separate entries in the vocabulary. Results is given in the figure below using transformers to measure bitrate for characters, subword-BPE-merged characters (2,000 merges), ortographic words and larger units where word tokens are merged with BPE (200, 1,000 and 5,000 merges). Bitrates are lower than those in the figure above, but these are not directly comparable: phones and characters do not have a one-to-one correspondence. Nevertheless, we see the same trend as above, with word units giving significantly lower bitrates than the other units.
+All of the main results above are performed on phones as the smallest unit. As a sanity check (or maybe an alternative that walks away from speech-based linguistic units), we could have also done the analysis on characters, i.e. words are represented in their orthographic form so that `two` and `too` would now be separate entries in the vocabulary. Results is given in the figure below using transformers (similar 20M-parameter models) to measure bitrate for characters, subword-BPE-merged characters (2,000 merges), ortographic words, and larger units where word tokens are merged with BPE (200, 1,000 and 5,000 merges). 
+
+In this figure, bitrates are lower than those in the figure above, but these are not directly comparable: phones and characters do not have a one-to-one correspondence. Nevertheless, we see the same trend, with word units giving significantly lower bitrates than the other units when based on characters.
 
 ![Bitrates for different character-based units using transformers for bitrate calculation.](docs/fig/unit_bars_char/unit_bars.pdf){width=85%}
 
+Finally, I wanted to gauge how close we are getting to the true bitrate; given the discussion in Section ??, this clearly isn't possible because we will never have the real model. Neverhtless, we can consider bitrates when training data and model size are dramatically scaled. I cannot train models of this size myself, but I can use available open-weight models. This means we are also tied to this model's units (so we cannot compare different tokenisations), but this is acceptable given that our aim now is not unit comparison. For this experiment, I use two Qwen2.5 models (Qwen Team, 2024), a 1.5B- and a 3B-parameter model. These models are trained on roughly 18T tokens of text. They use a byte-based BPE tokeniser with an output vocabulary of about 150k types. Because Qwen's training domain and punctuation is quite different from the normalised LibriSpeech text that I evaluate on, the models are conditioned on a lowercase unpunctuated primer drawn from train-clean-100, prepended to every evaluation utterance. (This lowers bitrate for both models.) With this setup, Qwen2.5-1.5B achieves a bitrate of 25.90 bps, while Qwen2.5-3B achieves 25.26 bps. These are directly comparable to the character-based result in Figure ??, where the best overall bitrate is 27.48. This shows that my models are in the right ballpark.
 
-
-Can I make sure the results are correct and makes sense?
-
-- Subword-BPE
-- Character-level models
-- Qwen
-
-
-## Discussion
-
-
-**Discussion.** Not words: someting in-between. Several things should still be done.
-
-
-## Limitations and future work
+## Discussion, limitations and future work
 
 
 
-## Sanity checks
-
-- Samples from the neural word model given the prompt `the cat sat ...`
-
-    - `the cat sat for some time gazing on the ground in the dark woods and she knew that she had seen it was true that she had had never seen it before`
-    - `the cat sat up in the cradle and the cat who had been watching for her life in the eyes of her cat but the cat soon came to look about her`
-    - `the cat sat down before him i have not been in love with her but you will be glad to see her and that you will not be so dear to me`
-    - `the cat sat there in her bedroom`
-    - `the cat sat in her bed`
-    - `the cat sat up in a hole in the trunk of a tree on the floor and on ~t ~h ~e sill of the bed there was a soft rustling sound and the dog barked out of his ears a very hard and the dog barked at the dog's throat then he stopped short for the dog to catch hold of his dog in a dog cart`
-
-- Multiple seeds: in figure
-
-- Bootstrap confidence intervals
-
-    - Use 10,000 bootstrap samples, sampling with replacement at the speaker level (sample 40 speakers with replacement) (Bisani and Ney 2004)
-    - All of the pair-wise comparisons are statistically significant at the 99.75\% level, except for one.
-    - The one exception is the $n$-gram word model when compared to the BPE-1000 model, where the difference is not significant (even at the 95\% level).
-    - But the improvement of $n$-gram BPE-1000 over BPE-5000 is significant.
-
-- Subword BPE: sanity check. Is the bitrate similar to syllable?
-
-    - Merge characters to get 2000 types
-    - Bitrate is 28.06 $\pm$ 0.11 with an OPT-20M model
-    - So not as good as word (27.49) and better than syllable (28.38)
-
-- Qwen model
-
-    - We don't know how close we are to the actual entropy bitrate (because we don't have a perfect model). But we can look at the bitrate using substantially bigger models than those used here. For this I use two Qwen2.5 models (Qwen Team, 2024).
-
-    - Setup:
-
-        - These models are trained on roughly 18T tokens of text. They use a byte-pair BPE tokeniser with an output vocabulary of about 150k types.
-        - Qwen conditions on a lowercase, unpunctuated primer drawn from train-clean-100, prepended to every utterance as shared context and never itself scored. This is just to get the model into the head-space of this domain. Priming helps for both models below.
-
-    - I use two models to measure bitrate on my data.
-
-        - Qwen2.5-1.5B: 25.90
-        - Qwen2.5-3B: 25.26
-
-    - The best bitrate above with the models trained on LibriSpeech is the word OPT-20M model giving a bitrate of 27.46.
-
-    - I think this shows that my models are in the right ballpark. As model size and amount of data scales, we should expect the different units to give similar bitrates. But the point of this study was to do a comparison under the same budget. (This was just for sanity checking.)
-
+As model size and amount of data scales, we should expect the different units to give similar bitrates. But the point of this study was to do a comparison under the same budget, and this serves as a reasonable sanity check.
 
 
 ## Discussion
@@ -282,7 +227,7 @@ Just because encoding is more efficient, it doesn't necessarily mean generation 
 
 ## Conclusion and future work
 
-I do not claim that words are the most efficient units (especially given that the concept of what a word is is contested, and also quite language dependent). What I would claim is that the most efficient unit is something bigger than phones or syllables.
+I do not claim that words are the most efficient units (especially given that the concept of what a word is is contested, and also quite language dependent). What I would claim is that the most efficient unit is something bigger than phones or syllables and smaller than long multi-word combinations.
 
 Other languages, especially languages where the definition of a word is different.
 
