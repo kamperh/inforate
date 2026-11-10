@@ -14,9 +14,9 @@ represented as constituent phones, e.g. every word is written as the phones of w
 is composed.
 
 - phone: 39-symbol ARPABET set
-- subwordphnx-BPE-5000: Subword BPE units are obtained at the phone level, i.e. common
+- subwordphnx-BPE-2000: Subword BPE units are obtained at the phone level, i.e. common
   co-occurring phone sequences are merged. Merging across word boundaries is not
-  allowed. The `-5000` indicates the final vocabulary size after merging.
+  allowed. The `-2000` indicates the final vocabulary size after merging.
 - syllable: Represented as phones, e.g. "sorry" is represented as "S-AA R-IY".
 - wordphn: The word "sorry" is represented as "S-AA-R-IY". Each word is therefore
   determined by its phonetic realisation. This means that too" and "two" are both

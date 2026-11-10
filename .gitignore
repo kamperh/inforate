@@ -59,3 +59,4 @@ venv/
 # Claude Code's project instructions: working notes for the agent rather than project
 # source, and they churn as the experiments move
 CLAUDE.md
+design.md
