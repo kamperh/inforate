@@ -258,5 +258,4 @@ The code for this project was written using AI (Claude Opus). I conceived of all
 experiments and carefully laid out a plan; AI then implemented it. I reviewed the code,
 found and fixed bugs, and edited it to improve clarity. The documentation produced and
 maintained by AI is included with this repository (`design.md`, `results.md`,
-`reproduce.md`, `CLAUDE.md`). I wrote this `readme.md` as well as the paper that
-accompany this work.
+`reproduce.md`). I wrote this `readme.md` as well as the paper that accompany this work.
