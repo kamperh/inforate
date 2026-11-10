@@ -241,9 +241,10 @@ the project's sharpest demonstration of it: written up from one run against a bo
 its two-run spread, which cost two of the four comparisons the second run had bought --
 with nothing in the two-run numbers to mark the one that would hold. **And a measured
 floor applied to one run is not safe either**: subwordphnx-BPE-50000 reads 0.18 bits/s
-below wordphn at seed 0 and 0.03 above it on five-seed means, seed 0 being wordphn's
-worst run of five and tied-best for the new unit, so the canonical run alone would have
-made it the first unit to beat its own word-level counterpart from below. Quote means
+below wordphn at seed 0 and only 0.03 below it on five-seed means, 0.3x the pair's
+floor, seed 0 being wordphn's worst run of five and tied-best for the new unit, so the
+canonical run alone would have made it the first unit to beat its own word-level
+counterpart from below. Quote means
 wherever a pair sits within about twice its floor.
 **One tokenisation holds the whole range of floors**: the four subwordphnx-BPE
 vocabularies measure 0.015, 0.279, 0.157 and 0.062, so the project's quietest unit and
@@ -256,9 +257,10 @@ are clear; the full set over sixteen units is 120, with the wordphn family's own
     word < word-BPE-200 < word-BPE-1000 < {syllable, word-BPE-5000} < phone
 
 with the braced pair **unordered** (1.1 sigma); every other adjacent step is
-clear. subword-BPE cannot be placed among the word-BPE points at all. Reported
-numbers remain the `seed = 0` runs; the headline table carries each unit's seed SD
-beside them. See `results.md`.
+clear. subword-BPE cannot be placed among the word-BPE points at all. **The headline
+table and every figure report five-seed means**, with each unit's seed SD beside them;
+the per-unit sections of `results.md` report the `seed = 0` run, and "Seed variance"
+carries both. See `results.md`.
 
 **Spelling a word out is cheaper than pronouncing it.** `wordphn` keeps word's spans
 but identifies each by its realised phones, and costs 0.70 bits/s for it at seed 0 and
@@ -268,14 +270,15 @@ which the seeds and the n-gram sweeps independently dissolved (reversal contrast
 -0.008 [-0.031, +0.016] under n-grams, +0.084 against a floor of 0.346 on the means).
 
 `subwordphnx-bpe`, subword BPE over phones with merges confined to a word (which is
-what `subword-bpe`'s own pre-tokeniser does), lands at **28.82 bits/s** at vocabulary
+what `subword-bpe`'s own pre-tokeniser does), lands at **28.98 bits/s** at vocabulary
 2000, between wordphn and phone -- but five seeds of it give SD **0.279**, the worst in
 the project, which leaves it unseparated from phone (2.8x the floor at seed 0, 2.0x on
 means) and clearly worse than wordphn only on the means (3.2x, against 2.3x at seed 0).
 Chunking a word into sub-word pieces costs about 0.7 bits/s whether the pieces are
 letters or phones at seed 0, though on means the two read +0.612 and +0.915. Swept over
-vocabulary at 200/2000/5000/50000 it descends from phone to level with wordphn, 29.04 to
-28.82 to 28.52 to 27.98, and the ordering holds in every bootstrap resample. **Every
+vocabulary at 200/2000/5000/50000 it descends from phone to level with wordphn, 29.07
+to 28.98 to 28.67 to 28.03 on means, and the ordering holds in every bootstrap
+resample. **Every
 size but 2000 is clear of phone** -- 9.8x, 6.5x and 19.8x its floor against that unit's
 own 2.8x -- while the step from 5000 to 50000 is 3.2x at seed 0 and 3.8x on the means,
 and both
