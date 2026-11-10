@@ -256,6 +256,6 @@ python qwen/eval_bitrate.py --model Qwen/Qwen2.5-3B
 
 The code for this project was written using AI (Claude Opus). I conceived of all the
 experiments and carefully laid out a plan; AI then implemented it. I reviewed the code,
-found and fixed bugs, and edited it to improve clarity. The documentation produced and
-maintained by AI is included with this repository (`design.md`, `results.md`,
-`reproduce.md`). I wrote this `readme.md` as well as the paper that accompany this work.
+found and fixed bugs, and edited it to improve clarity. The files `results.md` and
+`reproduce.md` were produced and maintained by AI. I wrote this `readme.md` as well as
+the paper that accompany this work.
