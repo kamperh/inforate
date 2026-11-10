@@ -7,7 +7,7 @@
 
 This is the repository for the paper:
 
-- H. Kamper, "To fill in," 2026. [[arXiv](https://www.tocomplete.com)]
+- H. Kamper, "On the information rate of phones, syllables and words," 2026. [[arXiv](https://www.tocomplete.com)]
 
 The following units are compared in the **main comparison**. All of the units are
 represented as constituent phones, e.g. every word is written as the phones of which it
@@ -34,7 +34,7 @@ There are also several **sanity checks** using different units:
 - word-BPE-5000: Multi-word combinations are now merged according to word orthography.
 
 Finally, two Qwen models, Qwen2.5-1.5B and Qwen2.5-3B, are also applied to the data
-using its own byte-pair BPE tokenisation over unicode bytes.
+using its own byte-level BPE tokenisation.
 
 
 
@@ -223,7 +223,7 @@ done
 
 ## Evaluation
 
-Every unit is scored against an existing checkpoint, specified in `UNITS` at the top of
+Every unit is scored using an existing checkpoint, specified in `UNITS` at the top of
 the script. The script writes `llm/eval_bitrate.md`.
 
 ```bash
