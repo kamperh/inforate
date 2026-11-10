@@ -55,3 +55,7 @@ venv/
 # intervals and seed-variance results reproducible without the 29G above. The sweep
 # reports (ngram/*.md, llm/eval_bitrate.md, qwen/eval_bitrate.md) are tracked for the
 # same reason.
+
+# Claude Code's project instructions: working notes for the agent rather than project
+# source, and they churn as the experiments move
+CLAUDE.md
