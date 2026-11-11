@@ -7,7 +7,8 @@
 
 This is the repository for the paper:
 
-- H. Kamper, "On the information rate of phones, syllables and words," 2026. [[arXiv](https://www.tocomplete.com)]
+- H. Kamper, "On the information rate of phones, syllables and words," *arXiv preprint
+  arXiv:2611.13990*, 2026. [[arXiv](https://arxiv.org/abs/2611.13990)]
 
 The following units are compared in the **main comparison**. All of the units are
 represented as constituent phones, e.g. every word is written as the phones of which it
